@@ -98,15 +98,42 @@ const MyPage = () => {
 
     // 탈퇴 실제 처리 핸들러 (alert -> showAlert 교체)
     const handleWithdrawConfirm = () => {
-        console.log("백엔드 API 호출: 탈퇴 처리 진행");
-        setActiveModal(null); // 먼저 '정말 탈퇴하시겠습니까?' 모달을 닫음
+        const xhr = new XMLHttpRequest();
 
-        // 세련된 커스텀 알림 모달 호출
-        showAlert(
-            "탈퇴 완료",
-            "탈퇴 처리가 완료되었습니다.\n그동안 이용해 주셔서 감사합니다.",
-            () => { window.location.href = "/"; } // 확인 클릭 시 메인으로 이동
-        );
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+            if (xhr.status >= 200 && xhr.status < 400) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+
+                    // resolveResult 응답 규격인 "success" 확인
+                    if (data.result === "success") {
+                        setActiveModal(null); // 모달 닫기
+
+                        // 커스텀 알림창 띄우기
+                        showAlert(
+                            "탈퇴 처리 완료",
+                            "회원 탈퇴가 정상적으로 처리되었습니다.\n메인 화면으로 이동합니다.",
+                            () => {
+                                window.location.href = "/"; // 메인으로 리다이렉트
+                            }
+                        );
+                    } else {
+                        showAlert("탈퇴 실패", "탈퇴 처리 중 오류가 발생했습니다.");
+                    }
+                } catch (e) {
+                    console.error("JSON 파싱 에러:", e);
+                }
+            } else {
+                showAlert("서버 오류", "네트워크 상태를 확인해 주세요.");
+            }
+        };
+
+        // DELETE 메서드로 요청 전송
+        xhr.open('DELETE', '/user/withdraw');
+        xhr.withCredentials = true; // 세션 정보 유지를 위해 필수
+        xhr.send();
     };
 
 

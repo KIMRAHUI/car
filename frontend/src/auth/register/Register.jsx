@@ -316,19 +316,23 @@ const Register = () => {
                         </div>
                     </div>
                 )}
-
                 {step === 3 && (
                     <div className="step-box">
                         <div className="top-guide-box">정확한 차량 관리를 위해 내 차 정보를 입력해 주세요.</div>
                         <div className="register-form-inner">
+                            {/* 차량 모델 */}
                             <div className="input-unit">
                                 <label className="auth-label">차량 모델</label>
                                 <input type="text" name="carModel" value={formData.carModel} onChange={handleInputChange} placeholder="아반떼N" className="auth-input" />
                             </div>
+
+                            {/* 차량 번호 */}
                             <div className="input-unit">
                                 <label className="auth-label">차량 번호</label>
                                 <input type="text" name="carNumber" value={formData.carNumber} onChange={handleInputChange} placeholder="12가 1234" className="auth-input" />
                             </div>
+
+                            {/* 연료 타입 */}
                             <div className="input-unit">
                                 <label className="auth-label">연료 타입</label>
                                 <div className="radio-selection-group">
@@ -339,9 +343,33 @@ const Register = () => {
                                     ))}
                                 </div>
                             </div>
+
+                            {/* 주행거리 - name="mileage" 추가 */}
                             <div className="input-unit">
                                 <label className="auth-label">현재 계기판 주행거리</label>
-                                <input type="text" placeholder="예: 52,100km" className="auth-input" value={formData.mileage} onChange={handleMileageChange} onBlur={handleMileageBlur} onFocus={handleMileageFocus} />
+                                <input type="text" name="mileage" placeholder="예: 52,100km" className="auth-input" value={formData.mileage} onChange={handleMileageChange} onBlur={handleMileageBlur} onFocus={handleMileageFocus} />
+                            </div>
+
+                            {/* [추가!] 연간 예상 주행거리 - 서버가 기다리는 데이터 */}
+                            <div className="input-unit">
+                                <label className="auth-label">연간 예상 주행거리</label>
+                                <select name="annualMileage" value={formData.annualMileage} onChange={handleInputChange} className="auth-input">
+                                    <option value="">선택해주세요</option>
+                                    <option value="10000">10,000km 미만</option>
+                                    <option value="15000">10,000km ~ 20,000km</option>
+                                    <option value="25000">20,000km 이상</option>
+                                </select>
+                            </div>
+
+                            {/* [추가!] 주행 환경 - 서버가 기다리는 데이터 */}
+                            <div className="input-unit">
+                                <label className="auth-label">주행 환경</label>
+                                <select name="drivingEnv" value={formData.drivingEnv} onChange={handleInputChange} className="auth-input">
+                                    <option value="">선택해주세요</option>
+                                    <option value="CITY">도심 위주 (정체 구간 많음)</option>
+                                    <option value="HIGHWAY">고속도로 위주 (장거리 주행)</option>
+                                    <option value="MIXED">복합 주행</option>
+                                </select>
                             </div>
                         </div>
                         <div className="step-btn-group">

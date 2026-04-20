@@ -173,4 +173,32 @@ public class UserController extends CommonController {
         // 결과를 응답 규격에 맞춰 반환합니다.
         return this.resolveResult(pair.getLeft());
     }
+
+    /**
+     * DELETE 회원 탈퇴 처리
+     * URL: /user/withdraw
+     */
+    @RequestMapping(value = "/withdraw", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> deleteWithdraw(HttpSession session) {
+        // 1. 세션에서 현재 로그인된 유저 정보 가져오기
+        UserEntity user = (UserEntity) session.getAttribute("sessionUser");
+
+        // 2. 미로그인 상태 체크
+        if (user == null) {
+            return this.resolveResult(CommonResult.FAILURE);
+        }
+
+        // 3. 서비스의 deleteUser 호출 (DB 삭제 수행)
+        Result result = this.userService.deleteUser(user.getEmail());
+
+        // 4. 삭제 성공 시 세션 무효화 (로그아웃 효과)
+        if (result == CommonResult.SUCCESS) {
+            session.invalidate();
+        }
+
+        return this.resolveResult(result);
+    }
+
+
 }
