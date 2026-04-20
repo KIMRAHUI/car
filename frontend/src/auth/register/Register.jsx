@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/header/Header.jsx';
 import useEmailAuth from '../../assets/javascript/useEmailAuth';
 import AuthAlertModal from '../../components/auth/AuthAlertModal.jsx';
+/* [추가] 차량 선택 모달 임포트 */
+import VehicleEditModal from '../../components/mypage/VehicleEditModal.jsx';
 import '../Label.css';
 import './register.css';
 
@@ -13,6 +15,9 @@ const Register = () => {
     const [step, setStep] = useState(1);
     const [emailFocused, setEmailFocused] = useState(false);
 
+    /* [추가] 차량 선택 모달 열림 상태 */
+    const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+
     // [추가] 모달 상태 관리
     const [modalConfig, setModalConfig] = useState({
         show: false,
@@ -22,7 +27,9 @@ const Register = () => {
 
     const [formData, setFormData] = useState({
         name: "", phone: "", email: "", emailVerify: "",
-        password: "", passwordConfirm: "", carModel: "",
+        password: "", passwordConfirm: "",
+        carModel: "",      // 화면 표시용 (예: 현대 아반떼 CN7)
+        carModelId: "",    // 서버 전송용 고유 ID (보안 강화)
         carNumber: "", fuelType: "", mileage: "",
         annualMileage: "", drivingEnv: ""
     });
@@ -61,6 +68,16 @@ const Register = () => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    /* [추가] 차량 모델 선택 완료 핸들러 */
+    const handleVehicleSelect = (brandName, modelName, modelId) => {
+        setFormData(prev => ({
+            ...prev,
+            carModel: `${brandName} ${modelName}`,
+            carModelId: modelId
+        }));
+        setIsVehicleModalOpen(false); // 선택 후 모달 닫기
     };
 
     const handlePhoneChange = (e) => {
@@ -132,9 +149,9 @@ const Register = () => {
             }
         }
         else if (step === 3) {
-            const { carModel, carNumber, fuelType, mileage } = formData;
-            if (!carModel) {
-                showAlert("정보 부족", "차량 모델을 입력해주세요.");
+            const { carModelId, carNumber, fuelType, mileage } = formData;
+            if (!carModelId) {
+                showAlert("정보 부족", "차량 모델을 선택해주세요.");
                 return;
             }
             if (!carNumber || !/^\d{2,3}[가-힣]\d{4}$/.test(carNumber.replace(/\s/g, ''))) {
@@ -163,7 +180,8 @@ const Register = () => {
         fd.append('email', formData.email);
         fd.append('password', formData.password);
         fd.append('phone', formData.phone.replace(/-/g, ''));
-        fd.append('carModel', formData.carModel);
+        /* [수정] 텍스트가 아닌 서버 보안 검증용 모델 ID 전송 */
+        fd.append('carModelId', formData.carModelId);
         fd.append('carNumber', formData.carNumber);
         fd.append('fuelType', formData.fuelType);
         fd.append('mileage', formData.mileage.replace(/[^0-9]/g, ''));
@@ -270,7 +288,6 @@ const Register = () => {
                                         <label className="auth-label">이메일</label>
                                         <input type="text" name="email" placeholder="이메일 주소" className="auth-input" value={formData.email} onChange={handleInputChange} disabled={isVerified} onFocus={() => setEmailFocused(true)} onBlur={() => setTimeout(() => setEmailFocused(false), 200)} />
                                     </div>
-                                    {/* [수정] 직접 훅의 함수 대신 handleSendEmail 호출 */}
                                     <button type="button" className="auth-verify-btn auth-btn-align-with-label" onClick={() => handleSendEmail(false)} disabled={isTimerActive || isVerified || isLoading}>
                                         {isLoading ? "발송 중" : "인증번호"}
                                     </button>
@@ -320,10 +337,19 @@ const Register = () => {
                     <div className="step-box">
                         <div className="top-guide-box">정확한 차량 관리를 위해 내 차 정보를 입력해 주세요.</div>
                         <div className="register-form-inner">
-                            {/* 차량 모델 */}
+                            {/* [수정] 차량 모델 입력창: 클릭 시 모달이 뜨도록 변경 */}
                             <div className="input-unit">
                                 <label className="auth-label">차량 모델</label>
-                                <input type="text" name="carModel" value={formData.carModel} onChange={handleInputChange} placeholder="아반떼N" className="auth-input" />
+                                <input
+                                    type="text"
+                                    name="carModel"
+                                    value={formData.carModel}
+                                    placeholder="클릭하여 차량을 선택해 주세요"
+                                    className="auth-input"
+                                    onClick={() => setIsVehicleModalOpen(true)}
+                                    readOnly // 직접 타이핑 방지 (모달 선택 유도)
+                                    style={{ cursor: 'pointer' }}
+                                />
                             </div>
 
                             {/* 차량 번호 */}
@@ -344,13 +370,11 @@ const Register = () => {
                                 </div>
                             </div>
 
-                            {/* 주행거리 - name="mileage" 추가 */}
                             <div className="input-unit">
                                 <label className="auth-label">현재 계기판 주행거리</label>
                                 <input type="text" name="mileage" placeholder="예: 52,100km" className="auth-input" value={formData.mileage} onChange={handleMileageChange} onBlur={handleMileageBlur} onFocus={handleMileageFocus} />
                             </div>
 
-                            {/* [추가!] 연간 예상 주행거리 - 서버가 기다리는 데이터 */}
                             <div className="input-unit">
                                 <label className="auth-label">연간 예상 주행거리</label>
                                 <select name="annualMileage" value={formData.annualMileage} onChange={handleInputChange} className="auth-input">
@@ -361,7 +385,6 @@ const Register = () => {
                                 </select>
                             </div>
 
-                            {/* [추가!] 주행 환경 - 서버가 기다리는 데이터 */}
                             <div className="input-unit">
                                 <label className="auth-label">주행 환경</label>
                                 <select name="drivingEnv" value={formData.drivingEnv} onChange={handleInputChange} className="auth-input">
@@ -388,6 +411,15 @@ const Register = () => {
                     </div>
                 )}
             </div>
+
+            {/* [추가] 차량 선택 모달 렌더링 */}
+            {isVehicleModalOpen && (
+                <VehicleEditModal
+                    onClose={() => setIsVehicleModalOpen(false)}
+                    onSelectComplete={handleVehicleSelect}
+                    isRegisterMode={true}
+                />
+            )}
 
             {/* 커스텀 알림 모달 렌더링 */}
             {modalConfig.show && (

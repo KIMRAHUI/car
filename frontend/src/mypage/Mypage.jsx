@@ -4,6 +4,22 @@ import './MyPage.css';
 import {Link} from "react-router-dom";
 import carImage from '../assets/image/mypage/ProfileImage.png';
 
+// [수정] 실제 경로와 파일명에 맞춰서 임포트 (경로: src/assets/image/modal)
+import Hyundai from '../assets/image/modal/Hyundai.png';
+import Kia from '../assets/image/modal/Kia.png';
+import Chevrolet from '../assets/image/modal/Chevrolet.png';
+import SsangYong from '../assets/image/modal/SsangYong.png';
+import Renault from '../assets/image/modal/Renault.png';
+import Ford from '../assets/image/modal/Ford.png';
+import MINI from '../assets/image/modal/MINI.png';
+import Lincoln from '../assets/image/modal/Lincoln.png';
+import MercedesBenz from '../assets/image/modal/Mercedes-Benz.png';
+import BMW from '../assets/image/modal/BMW.png';
+import Audi from '../assets/image/modal/Audi.png';
+import Volvo from '../assets/image/modal/Volvo.png';
+import Toyota from '../assets/image/modal/Toyota.png';
+import Nissan from '../assets/image/modal/Nissan.png';
+
 // [추가] 분리된 모달 컴포넌트들 임포트
 import WithdrawModal from '../components/mypage/WithdrawModal.jsx';
 import EditChoiceModal from '../components/mypage/EditChoiceModal.jsx';
@@ -51,31 +67,44 @@ const MyPage = () => {
     };
 
     /**
-     * 마이페이지 사용자 정보 조회 (XMLHttpRequest 방식)
-     * 수정사항:
-     * 1. data.result 비교를 백엔드 CommonController 포맷인 소문자 "success"로 변경
-     * 2. 세션 유지를 위해 withCredentials 설정 유지
+     * [개선] 임포트된 이미지 변수들을 활용하여 브랜드 로고를 리턴하는 함수
      */
-    useEffect(() => {
+    const getBrandLogo = (brandName) => {
+        if (!brandName) return Ford; // 기본값
+        const name = brandName.toLowerCase();
+
+        if (name.includes('현대') || name.includes('hyundai')) return Hyundai;
+        if (name.includes('기아') || name.includes('kia')) return Kia;
+        if (name.includes('쉐보레') || name.includes('chevrolet')) return Chevrolet;
+        if (name.includes('쌍용') || name.includes('ssangyong')) return SsangYong;
+        if (name.includes('르노') || name.includes('renault')) return Renault;
+        if (name.includes('포드') || name.includes('ford')) return Ford;
+        if (name.includes('미니') || name.includes('mini')) return MINI;
+        if (name.includes('링컨') || name.includes('lincoln')) return Lincoln;
+        if (name.includes('벤츠') || name.includes('mercedes')) return MercedesBenz;
+        if (name.includes('bmw')) return BMW;
+        if (name.includes('아우디') || name.includes('audi')) return Audi;
+        if (name.includes('볼보') || name.includes('volvo')) return Volvo;
+        if (name.includes('토요타') || name.includes('toyota')) return Toyota;
+        if (name.includes('닛산') || name.includes('nissan')) return Nissan;
+
+        return Ford; // 매칭되는게 없으면 기본값
+    };
+
+    /**
+     * [개선] 마이페이지 사용자 정보 조회 함수화
+     * 재사용이 가능하도록 useEffect 외부로 분리하였습니다.
+     */
+    const fetchUserInfo = () => {
         const xhr = new XMLHttpRequest();
-
-        // readyState 변화에 따른 이벤트 핸들러
         xhr.onreadystatechange = () => {
-            // 1. 요청 완료 여부 확인 (XMLHttpRequest.DONE = 4)
-            if (xhr.readyState !== XMLHttpRequest.DONE) {
-                return;
-            }
-
-            // 2. HTTP 상태 코드 확인 (200~399 범위 외 에러 처리)
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
             if (xhr.status < 200 || xhr.status >= 400) {
                 setIsLoggedIn(false);
                 return;
             }
-
-            // 3. 응답 데이터 처리
             try {
                 const data = JSON.parse(xhr.responseText);
-                // 백엔드 resolveResult가 result.name().toLowerCase()를 반환하므로 소문자로 비교
                 if (data.result === "success") {
                     setIsLoggedIn(true);
                     setUser(data.user);
@@ -87,12 +116,14 @@ const MyPage = () => {
                 setIsLoggedIn(false);
             }
         };
-
-        // API 설정 (GET 방식)
         xhr.open('GET', '/mypage/info');
-        xhr.withCredentials = true; // 세션 쿠키 전송을 위해 필수
+        xhr.withCredentials = true;
         xhr.send();
+    };
 
+    // 초기 로드 시 실행
+    useEffect(() => {
+        fetchUserInfo();
     }, []);
 
 
@@ -189,8 +220,14 @@ const MyPage = () => {
                 <section className="left-panel">
 
                     <div className="car-header">
-                        {/* DB carModel 데이터가 있다면 적용, 없다면 기본값 유지 */}
-                        <span className="brand-logo">{user?.carModel || "Ford"}</span>
+                        {/* [수정] 텍스트 대신 임포트한 브랜드 로고 이미지 동적 출력 */}
+                        <div className="brand-logo-container">
+                            <img
+                                src={getBrandLogo(user?.brandName)}
+                                alt={user?.brandName || "brand"}
+                                className="brand-logo-img"
+                            />
+                        </div>
                         <h1 className="car-name">{user?.carNumber || "MUSTANG"}</h1>
                     </div>
 
@@ -234,7 +271,8 @@ const MyPage = () => {
                                     <div className="info-header">
 
                                         <h3>
-                                            {user?.carModel || "23년 8월 머스탱(FORD)"} / {user?.name}
+                                            {/* [수정] 서버 데이터 modelName과 brandName 연동 */}
+                                            {user?.brandName || "브랜드 정보 없음"} {user?.modelName ? `(${user.modelName})` : ""} / {user?.name}
                                         </h3>
 
                                         <div className="info-actions">
@@ -480,10 +518,16 @@ const MyPage = () => {
                 />
             )}
 
-            {/* 3. 차량 정보 수정 모달 */}
+            {/* 3. 차량 정보 수정 모달 [개선]
+                수정 성공 시 데이터 갱신을 위해 fetchUserInfo를 onSuccess로 전달합니다.
+            */}
             {activeModal === 'vehicleEdit' && (
                 <VehicleEditModal
                     onClose={() => setActiveModal(null)}
+                    onSuccess={() => {
+                        fetchUserInfo(); // 데이터 새로고침
+                        setActiveModal(null);
+                    }}
                 />
             )}
 

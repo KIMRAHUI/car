@@ -5,22 +5,14 @@
     <insert id="insertUser" parameterType="com.krh.backend.entities.user.UserEntity">
         INSERT INTO `car`.`users` (
             `email`, `password`, `name`, `phone`,
-            `car_model`, `car_number`, `fuel_type`, `mileage`,
+            `car_model_id`, `car_number`, `fuel_type`, `mileage`,
             `annual_mileage`, `driving_env`,
             `social_type_code`, `social_id`
         ) VALUES (
                      #{user.email}, #{user.password}, #{user.name}, #{user.phone},
-                     #{user.carModel}, #{user.carNumber}, #{user.fuelType}, #{user.mileage},
+                     #{user.carModelId}, #{user.carNumber}, #{user.fuelType}, #{user.mileage},
                      #{user.annualMileage}, #{user.drivingEnv},
                      #{user.socialTypeCode}, #{user.socialId}
-                 )
-    </insert>
-
-    <insert id="insertEmailToken" parameterType="com.krh.backend.entities.user.EmailTokenEntity">
-        INSERT INTO `car`.`email_tokens` (
-            `email`, `code`, `salt`, `expires_at`
-        ) VALUES (
-                     #{token.email}, #{token.code}, #{token.salt}, #{token.expiresAt}
                  )
     </insert>
 
@@ -28,7 +20,7 @@
         UPDATE `car`.`users`
         SET `password`       = #{user.password},
             `phone`          = #{user.phone},
-            `car_model`      = #{user.carModel},
+            `car_model_id`   = #{user.carModelId},
             `car_number`     = #{user.carNumber},
             `fuel_type`      = #{user.fuelType},
             `mileage`        = #{user.mileage},
@@ -37,6 +29,53 @@
         WHERE `email` = #{user.email}
         LIMIT 1
     </update>
+
+    <select id="selectByEmail" resultType="com.krh.backend.entities.user.UserEntity">
+        SELECT u.`email`, u.`password`, u.`name`, u.`phone`,
+               u.`car_model_id`   AS `carModelId`,
+               m.`model_name`     AS `modelName`,
+               b.`brand_name`     AS `brandName`,
+               u.`car_number`     AS `carNumber`,
+               u.`fuel_type`      AS `fuelType`,
+               u.`mileage`,
+               u.`annual_mileage` AS `annualMileage`,
+               u.`driving_env`    AS `drivingEnv`,
+               u.`created_at`     AS `createdAt`,
+               u.`social_type_code` AS `socialTypeCode`,
+               u.`social_id`      AS `socialId`
+        FROM `car`.`users` u
+                 LEFT JOIN `car`.`car_models` m ON u.`car_model_id` = m.`model_id`
+                 LEFT JOIN `car`.`car_brands` b ON m.`brand_id` = b.`brand_id`
+        WHERE u.`email` = #{email}
+    </select>
+
+    <select id="selectBySocialInfo" resultType="com.krh.backend.entities.user.UserEntity">
+        SELECT u.`email`, u.`password`, u.`name`, u.`phone`,
+               u.`car_model_id`   AS `carModelId`,
+               m.`model_name`     AS `modelName`,
+               b.`brand_name`     AS `brandName`,
+               u.`car_number`     AS `carNumber`,
+               u.`fuel_type`      AS `fuelType`,
+               u.`mileage`,
+               u.`annual_mileage` AS `annualMileage`,
+               u.`driving_env`    AS `drivingEnv`,
+               u.`created_at`     AS `createdAt`,
+               u.`social_type_code` AS `socialTypeCode`,
+               u.`social_id`      AS `socialId`
+        FROM `car`.`users` u
+                 LEFT JOIN `car`.`car_models` m ON u.`car_model_id` = m.`model_id`
+                 LEFT JOIN `car`.`car_brands` b ON m.`brand_id` = b.`brand_id`
+        WHERE u.`social_type_code` = #{socialTypeCode}
+          AND u.`social_id` = #{socialId}
+    </select>
+
+    <insert id="insertEmailToken" parameterType="com.krh.backend.entities.user.EmailTokenEntity">
+        INSERT INTO `car`.`email_tokens` (
+            `email`, `code`, `salt`, `expires_at`
+        ) VALUES (
+                     #{token.email}, #{token.code}, #{token.salt}, #{token.expiresAt}
+                 )
+    </insert>
 
     <update id="updateEmailToken" parameterType="com.krh.backend.entities.user.EmailTokenEntity">
         UPDATE `car`.`email_tokens`
@@ -73,37 +112,6 @@
         LIMIT 1
     </delete>
 
-    <select id="selectByEmail" resultType="com.krh.backend.entities.user.UserEntity">
-        SELECT `email`, `password`, `name`, `phone`,
-               `car_model` AS `carModel`,
-               `car_number` AS `carNumber`,
-               `fuel_type` AS `fuelType`,
-               `mileage`,
-               `annual_mileage` AS `annualMileage`,
-               `driving_env` AS `drivingEnv`,
-               `created_at` AS `createdAt`,
-               `social_type_code` AS `socialTypeCode`,
-               `social_id` AS `socialId`
-        FROM `car`.`users`
-        WHERE `email` = #{email}
-    </select>
-
-    <select id="selectBySocialInfo" resultType="com.krh.backend.entities.user.UserEntity">
-        SELECT `email`, `password`, `name`, `phone`,
-               `car_model` AS `carModel`,
-               `car_number` AS `carNumber`,
-               `fuel_type` AS `fuelType`,
-               `mileage`,
-               `annual_mileage` AS `annualMileage`,
-               `driving_env` AS `drivingEnv`,
-               `created_at` AS `createdAt`,
-               `social_type_code` AS `socialTypeCode`,
-               `social_id` AS `socialId`
-        FROM `car`.`users`
-        WHERE `social_type_code` = #{socialTypeCode}
-          AND `social_id` = #{socialId}
-    </select>
-
     <select id="selectEmailTokenByEmail" resultType="com.krh.backend.entities.user.EmailTokenEntity">
         SELECT `email`, `code`, `salt`,
                `retry_count` AS `retryCount`,
@@ -115,6 +123,26 @@
         WHERE `email` = #{email}
         ORDER BY `created_at` DESC
         LIMIT 1
+    </select>
+    <select id="selectAllBrands" resultType="map">
+        SELECT `brand_id`   AS `id`,
+               `brand_name` AS `name`,
+               `brand_logo` AS `image`
+        FROM `car`.`car_brands`
+        ORDER BY `brand_name` ASC
+    </select>
+
+    <select id="selectModelsByBrandId" resultType="map">
+        SELECT `model_id`   AS `id`,
+               `model_name` AS `name`
+        FROM `car`.`car_models`
+        WHERE `brand_id` = #{brandId}
+        ORDER BY `model_name` ASC
+    </select>
+
+    <select id="countModelById" resultType="int"> SELECT COUNT(*)
+                                                  FROM `car`.`car_models`
+                                                  WHERE `model_id` = #{modelId}
     </select>
 
 </mapper>

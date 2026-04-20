@@ -1,12 +1,10 @@
-import React, { useState, useMemo } from 'react';
-
-// 닫기 버튼 및 모델 대체 이미지
+import React, {useState, useEffect, useMemo} from 'react';
 import deleteIcon from '../../assets/image/modal/Close.png';
 import carMockImage from '../../assets/image/modal/car.png';
-
+import AuthAlertModal from '../../components/auth/AuthAlertModal.jsx'; // [추가] 커스텀 모달 임포트
 import './MyPageModal.css';
 
-// 브랜드 이미지 임포트 (대소문자/파일명 엄격 준수)
+// 로고 이미지 임포트
 import Hyundai from '../../assets/image/modal/Hyundai.png';
 import Kia from '../../assets/image/modal/Kia.png';
 import Chevrolet from '../../assets/image/modal/Chevrolet.png';
@@ -22,96 +20,145 @@ import Volvo from '../../assets/image/modal/Volvo.png';
 import Toyota from '../../assets/image/modal/Toyota.png';
 import Nissan from '../../assets/image/modal/Nissan.png';
 
-const VehicleEditModal = ({ onClose }) => {
+const VehicleEditModal = ({ onClose, onSelectComplete, isRegisterMode = false }) => {
     const [step, setStep] = useState(1);
-    const [selectedMake, setSelectedMake] = useState('');
-    const [selectedModel, setSelectedModel] = useState('');
+    const [brands, setBrands] = useState([]);
+    const [models, setModels] = useState([]);
+
+    const [selectedBrand, setSelectedBrand] = useState(null);
+    const [selectedModel, setSelectedModel] = useState(null);
     const [licensePlate, setLicensePlate] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false); // 로딩 상태 추가
 
-    const carMakes = useMemo(() => [
-        { id: 'Hyundai', name: '현대', image: Hyundai },
-        { id: 'Kia', name: '기아', image: Kia },
-        { id: 'Chevrolet', name: '쉐보레', image: Chevrolet },
-        { id: 'SsangYong', name: '쌍용', image: SsangYong },
-        { id: 'MINI', name: '미니', image: MINI },
-        { id: 'Renault', name: '르노', image: Renault },
-        { id: 'Lincoln', name: '링컨', image: Lincoln },
-        { id: 'Ford', name: '포드', image: Ford },
-        { id: 'MercedesBenz', name: '벤츠', image: MercedesBenz },
-        { id: 'Audi', name: '아우디', image: Audi },
-        { id: 'BMW', name: 'BMW', image: BMW },
-        { id: 'Volvo', name: '볼보', image: Volvo },
-        { id: 'Toyota', name: '도요타', image: Toyota },
-        { id: 'Nissan', name: '닛산', image: Nissan },
-    ], []);
+    // [추가] 커스텀 모달 상태 관리
+    const [alertConfig, setAlertConfig] = useState({
+        show: false,
+        title: '',
+        message: '',
+        onConfirm: null
+    });
 
-    const allModels = [
-        '그랜저 HG', '그랜저 IG', '아반떼 AD', '아반떼 CN7', '싼타페 TM', '싼타페 MX5',
-        '쏘나타 DN8', '팰리세이드', 'G80', 'GV80', 'K5', 'K8', '쏘렌토', '카니발',
-        '스포티지', '머스탱 GT', '머스탱 에코부스트', '익스플로러', 'E클래스', 'S클래스',
-        '5시리즈', '3시리즈', 'Model 3', 'Model Y'
-    ];
+    // [추가] 커스텀 알림 호출 도우미
+    const showAlert = (title, message, onConfirm = null) => {
+        setAlertConfig({ show: true, title, message, onConfirm });
+    };
+
+    const logoMap = {
+        'Hyundai.png': Hyundai, 'Kia.png': Kia, 'Chevrolet.png': Chevrolet,
+        'SsangYong.png': SsangYong, 'MINI.png': MINI, 'Renault.png': Renault,
+        'Lincoln.png': Lincoln, 'Ford.png': Ford, 'Mercedes-Benz.png': MercedesBenz,
+        'Audi.png': Audi, 'BMW.png': BMW, 'Volvo.png': Volvo,
+        'Toyota.png': Toyota, 'Nissan.png': Nissan
+    };
+
+    useEffect(() => {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                setBrands(data);
+            }
+        };
+        xhr.open('GET', '/user/car-brands');
+        xhr.send();
+    }, []);
+
+    const handleMakeSelect = (brand) => {
+        setSelectedBrand(brand);
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                setModels(data);
+                setStep(2);
+                setSearchQuery('');
+            }
+        };
+        xhr.open('GET', `/user/car-models?brandId=${brand.id}`);
+        xhr.send();
+    };
 
     const filteredModels = useMemo(() => {
-        if (!searchQuery.trim()) return allModels.slice(0, 5);
-        return allModels.filter(model =>
-            model.toLowerCase().includes(searchQuery.toLowerCase())
+        if (!searchQuery.trim()) return models.slice(0, 8);
+        return models.filter(m =>
+            m.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [searchQuery]);
-
-    const getSelectedMakeImage = () => {
-        const found = carMakes.find(m => m.name === selectedMake);
-        return found ? found.image : carMockImage;
-    };
-
-    const handleMakeSelect = (makeName) => {
-        setSelectedMake(makeName);
-        setStep(2);
-        setSearchQuery('');
-    };
+    }, [searchQuery, models]);
 
     const handleModelSelect = (model) => {
-        setSelectedModel(model);
-        setStep(3);
+        if (isRegisterMode && onSelectComplete) {
+            onSelectComplete(selectedBrand.name, model.name, model.id);
+        } else {
+            setSelectedModel(model);
+            setStep(3);
+        }
     };
 
     const handleFinalSubmit = () => {
         if (!licensePlate.trim()) {
-            alert("차량 번호를 입력해 주세요.");
+            showAlert("입력 오류", "차량 번호를 입력해 주세요.");
             return;
         }
-        console.log(`[API 호출] 브랜드: ${selectedMake}, 모델: ${selectedModel}, 차량번호: ${licensePlate}`);
-        alert("차량 정보가 성공적으로 변경되었습니다.");
-        onClose();
+
+        setIsSubmitting(true);
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                setIsSubmitting(false);
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.result === 'success') {
+                            // [수정] 브라우저 alert 대신 커스텀 모달 사용
+                            showAlert(
+                                "수정 완료",
+                                "차량 정보가 성공적으로 변경되었습니다.",
+                                () => { window.location.reload(); }
+                            );
+                        } else {
+                            showAlert("수정 실패", "차량 수정에 실패했습니다. 올바른 정보를 선택해 주세요.");
+                        }
+                    } catch (e) {
+                        showAlert("오류", "데이터 처리 중 오류가 발생했습니다.");
+                    }
+                } else {
+                    showAlert("서버 오류", "네트워크 상태를 확인해 주세요.");
+                }
+            }
+        };
+
+        xhr.open('POST', '/user/update-vehicle');
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.withCredentials = true;
+
+        const params = `carModelId=${selectedModel.id}&carNumber=${encodeURIComponent(licensePlate)}`;
+        xhr.send(params);
     };
 
-    // 1단계: 브랜드 목록
     const renderStep1 = () => (
         <div className="modal-body-scroll no-padding">
             <div className="car-make-grid">
-                {carMakes.map(make => (
-                    <button key={make.id} className="car-make-item" onClick={() => handleMakeSelect(make.name)}>
+                {brands.map(brand => (
+                    <button key={brand.id} className="car-make-item" onClick={() => handleMakeSelect(brand)}>
                         <div className="logo-circle">
-                            <img src={make.image} alt={make.name} />
+                            <img src={logoMap[brand.image] || carMockImage} alt={brand.name} />
                         </div>
-                        <span>{make.name}</span>
+                        <span>{brand.name}</span>
                     </button>
                 ))}
             </div>
         </div>
     );
 
-    // 2단계: 모델 검색
     const renderStep2 = () => (
         <div className="modal-body-scroll">
             <div className="selected-make-display">
                 <div className="logo-circle large">
-                    <img src={getSelectedMakeImage()} alt={selectedMake} />
+                    <img src={logoMap[selectedBrand.image] || carMockImage} alt={selectedBrand.name} />
                 </div>
-                <p className="step-desc"><strong>{selectedMake}</strong>의 모델명을 검색해 주세요.</p>
+                <p className="step-desc"><strong>{selectedBrand.name}</strong>의 모델명을 검색해 주세요.</p>
             </div>
-
             <div className="search-bar-container">
                 <input
                     type="text"
@@ -122,13 +169,12 @@ const VehicleEditModal = ({ onClose }) => {
                     autoFocus
                 />
             </div>
-
             <div className="car-model-list">
                 {filteredModels.length > 0 ? (
                     filteredModels.map(model => (
-                        <button key={model} className="car-model-item" onClick={() => handleModelSelect(model)}>
-                            <img src={getSelectedMakeImage()} alt={model} className="model-small-logo" />
-                            <span>{model}</span>
+                        <button key={model.id} className="car-model-item" onClick={() => handleModelSelect(model)}>
+                            <img src={logoMap[selectedBrand.image] || carMockImage} alt={model.name} className="model-small-logo" />
+                            <span>{model.name}</span>
                         </button>
                     ))
                 ) : (
@@ -138,17 +184,15 @@ const VehicleEditModal = ({ onClose }) => {
         </div>
     );
 
-    // 3단계: 차량번호 입력
     const renderStep3 = () => (
         <div className="modal-body-scroll">
             <div className="selected-summary">
                 <div className="logo-circle">
-                    <img src={getSelectedMakeImage()} alt={selectedMake} />
+                    <img src={logoMap[selectedBrand.image] || carMockImage} alt={selectedBrand.name} />
                 </div>
-                <p className="step-desc">선택하신 차량: <strong>{selectedMake} {selectedModel}</strong></p>
+                <p className="step-desc">선택하신 차량: <strong>{selectedBrand.name} {selectedModel.name}</strong></p>
             </div>
             <p className="step-desc">새로운 차량 번호를 입력해 주세요.</p>
-
             <div className="license-plate-input-area">
                 <input
                     type="text"
@@ -158,37 +202,54 @@ const VehicleEditModal = ({ onClose }) => {
                     className="auth-input"
                 />
             </div>
-
-            <button className="btn-primary-gray" onClick={handleFinalSubmit} style={{ marginTop: '2rem' }}>
-                수정 완료
+            <button
+                className={`btn-primary-gray ${licensePlate.trim() ? 'active-black' : ''}`}
+                onClick={handleFinalSubmit}
+                style={{ marginTop: '2rem' }}
+                disabled={isSubmitting}
+            >
+                {isSubmitting ? "처리 중..." : "수정 완료"}
             </button>
         </div>
     );
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content vehicle-edit-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header-gray">
-                    {/* [수정] 기호(<) 대신 '이전' 텍스트 사용 */}
-                    {step > 1 && (
-                        <button className="btn-back-text" onClick={() => {
-                            setStep(step - 1);
-                            setSearchQuery('');
-                        }}>
-                            이전
+        <>
+            <div className="modal-overlay" onClick={onClose}>
+                <div className="modal-content vehicle-edit-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-header-gray">
+                        {step > 1 && (
+                            <button className="btn-back-text" onClick={() => {
+                                setStep(step - 1);
+                                setSearchQuery('');
+                            }}>
+                                이전
+                            </button>
+                        )}
+                        <h2>{step === 1 ? "내 차량 선택" : "차량 정보 변경하기"}</h2>
+                        <button className="modal-close-btn" onClick={onClose}>
+                            <img src={deleteIcon} alt="Close" />
                         </button>
-                    )}
-                    <h2>{step === 1 ? "내 차량 선택" : "차량 정보 변경하기"}</h2>
-                    <button className="modal-close-btn" onClick={onClose}>
-                        <img src={deleteIcon} alt="Close" />
-                    </button>
+                    </div>
+                    {step === 1 && renderStep1()}
+                    {step === 2 && renderStep2()}
+                    {!isRegisterMode && step === 3 && renderStep3()}
                 </div>
-
-                {step === 1 && renderStep1()}
-                {step === 2 && renderStep2()}
-                {step === 3 && renderStep3()}
             </div>
-        </div>
+
+            {/* [추가] 커스텀 알림 모달 */}
+            {alertConfig.show && (
+                <AuthAlertModal
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    onClose={() => {
+                        const confirmAction = alertConfig.onConfirm;
+                        setAlertConfig(prev => ({ ...prev, show: false }));
+                        if (confirmAction) confirmAction();
+                    }}
+                />
+            )}
+        </>
     );
 };
 
