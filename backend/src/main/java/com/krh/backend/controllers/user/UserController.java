@@ -42,7 +42,7 @@ public class UserController extends CommonController {
     }
 
     /**
-     * [추가] POST 이메일 인증번호 확인
+     * POST 이메일 인증번호 확인
      * @param email 수신 이메일
      * @param code 사용자가 입력한 6자리 인증번호
      * @return 성공 시 SUCCESS, 만료 시 INVALID_EMAIL, 불일치 시 WRONG_PASSWORD 등
@@ -58,7 +58,7 @@ public class UserController extends CommonController {
     }
 
     /**
-     * [수정] POST 임시 비밀번호 발급 (차량 번호 검증 추가)
+     * POST 임시 비밀번호 발급 (차량 번호 검증 추가)
      * @param email 수신 이메일
      * @param carNumber 사용자가 입력한 차량 번호
      * @return 성공 시 SUCCESS, 유저 없음 시 USER_NOT_FOUND, 정보 불일치 시 FAILURE 등
@@ -157,5 +157,20 @@ public class UserController extends CommonController {
             map.put("email", user.getEmail());
         }
         return map;
+    }
+
+    /**
+     * POST 개인정보 및 비밀번호 수정
+     * 프론트엔드에서 보낸 currentPassword를 함께 받아 서비스에 전달
+     */
+    @RequestMapping(value = "/update-info", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> postUpdateInfo(UserEntity user,
+                                              @RequestParam("currentPassword") String currentPassword) {
+        // 보완된 UserService의 updateUserInfo 메서드를 호출합니다.
+        Pair<Result, UserEntity> pair = this.userService.updateUserInfo(user, currentPassword);
+
+        // 결과를 응답 규격에 맞춰 반환합니다.
+        return this.resolveResult(pair.getLeft());
     }
 }

@@ -188,21 +188,40 @@ public class UserService {
 
     /**
      * UPDATE 유저 정보 수정
+     * [핵심 수정] 기존 비밀번호 검증 로직 추가
+     * @param user 수정할 정보 (새 비밀번호 포함)
+     * @param currentPassword 사용자가 입력한 현재 비밀번호
      */
     @Transactional
-    public Pair<Result, UserEntity> updateUserInfo(UserEntity user) {
-        if (!UserValidator.validateEmail(user.getEmail()) || !UserValidator.validatePhone(user.getPhone())) {
-            return Pair.of(CommonResult.FAILURE, null);
+    public Pair<Result, UserEntity> updateUserInfo(UserEntity user, String currentPassword) {
+        // 1. 유효성 검사
+        if (!UserValidator.validateEmail(user.getEmail())) {
+            return Pair.of(UserResult.INVALID_EMAIL, null);
         }
 
+        // 2. 기존 유저 정보 조회
+        UserEntity dbUser = this.userMapper.selectByEmail(user.getEmail());
+        if (dbUser == null) {
+            return Pair.of(UserResult.USER_NOT_FOUND, null);
+        }
+
+        // 3. 기존 비밀번호 검증 (BCrypt 대조)
+        // 사용자가 입력한 currentPassword와 DB의 암호화된 password를 비교합니다.
+        if (currentPassword == null || !BCrypt.checkpw(currentPassword, dbUser.getPassword())) {
+            return Pair.of(UserResult.WRONG_PASSWORD, null); // 일치하지 않으면 '기존 비밀번호 불일치' 반환
+        }
+
+        // 4. 전화번호 양식 정제
         if (user.getPhone() != null) {
             user.setPhone(user.getPhone().replaceAll("[^0-9]", ""));
         }
 
+        // 5. 새 비밀번호 암호화 후 설정
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
         }
 
+        // 6. DB 업데이트 실행
         return this.userMapper.updateUserInfo(user) > 0
                 ? Pair.of(CommonResult.SUCCESS, user)
                 : Pair.of(CommonResult.FAILURE, null);

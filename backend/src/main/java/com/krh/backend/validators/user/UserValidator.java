@@ -9,7 +9,7 @@ import lombok.experimental.UtilityClass;
 public class UserValidator {
     //정규식
     public static final String EMAIL_REGEX = "^(?=.{8,50}$)([\\da-zA-Z_.]{4,25})@([\\da-z\\-]+\\.)?([\\da-z\\-]{2,})\\.([a-z]{2,15}\\.)?([a-z]{2,3})$";
-    public static final String PASSWORD_REGEX = "^[\\da-zA-Z`~!@#$%^&*()\\-_=+\\[{\\]}\\\\|;:'\",<.>/?]{6,50}$"; // 보안 강화: 8자 이상
+    public static final String PASSWORD_REGEX = "^[\\da-zA-Z`~!@#$%^&*()\\-_=+\\[{\\]}\\\\|;:'\",<.>/?]{8,50}$"; // 보안 강화: 8자 이상
     public static final String NAME_REGEX = "^[가-힣a-zA-Z]{2,10}$"; // 이름 2~10자
     public static final String PHONE_REGEX = "^010\\d{7,8}$"; // 하이픈 제거된 숫자만
     public static final String CAR_NUMBER_REGEX = "^\\d{2,3}[가-힣]\\d{4}$";
@@ -24,7 +24,7 @@ public class UserValidator {
     //Password검증
     public static boolean validatePassword(String password) {
         return password != null &&
-                ValidatorUtils.isLengthInBetween(password,6,50) &&
+                ValidatorUtils.isLengthInBetween(password,8,50) &&
                 password.matches(PASSWORD_REGEX);
     }
 
