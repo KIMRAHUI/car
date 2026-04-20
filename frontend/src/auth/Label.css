@@ -1,0 +1,197 @@
+/* --- 기존 스타일 유지 (훼손/생략 없음) --- */
+
+.auth-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #242424;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* 인증 버튼 공통 */
+.auth-verify-btn {
+    background-color: #ff2d2d;
+    color: #fff;
+    border-radius: 0.3125rem;
+    font-weight: bold;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+/* 인풋창 공통 설정 */
+.auth-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: #000;
+    transition: all 0.2s ease-in-out;
+    box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #000;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-primary-black {
+    width: 100%;
+    background-color: #222;
+    color: #fff;
+    padding: 0.8rem 0;
+    border-radius: 0.25rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+}
+
+.helper-text {
+    color: #ff2d2d;
+    font-size: 0.75rem;
+    position: absolute;
+    bottom: -1.2rem;
+    left: 0;
+    margin: 0;
+}
+
+/* 체크박스 커스텀 */
+.auth-option-row input[type="checkbox"],
+.terms-check-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    border: 0.125rem solid #ccc;
+    border-radius: 0.2rem;
+    outline: none;
+    cursor: pointer;
+    background-color: #fff;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.auth-option-row input[type="checkbox"]:checked,
+.terms-check-row input[type="checkbox"]:checked {
+    background-color: #ff2d2d;
+    border-color: #ff2d2d;
+}
+
+.auth-option-row input[type="checkbox"]:checked::after,
+.terms-check-row input[type="checkbox"]:checked::after {
+    content: '✔';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 0.8rem;
+}
+
+.auth-option-row, .terms-check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+/* --- 라디오 버튼 커스텀 스타일 --- */
+.radio-selection-group {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.3rem;
+}
+
+.radio-selection-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.radio-selection-group input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0.125rem solid #ccc;
+    border-radius: 50%;
+    outline: none;
+    cursor: pointer;
+    background-color: #fff;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.radio-selection-group input[type="radio"]:checked {
+    border-color: #ff2d2d;
+}
+
+.radio-selection-group input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0.625rem;
+    height: 0.625rem;
+    background-color: #ff2d2d;
+    border-radius: 50%;
+}
+
+/* --------------------------------------------------
+   [추가/수정] 공통 로딩 오버레이 & 애니메이션 스타일
+--------------------------------------------------- */
+
+/* 1. 회전 애니메이션 정의 (명시적으로 정의) */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 2. 화면 전체를 덮는 오버레이 레이어 */
+.auth-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 3. 로딩 스피너 (빙글빙글 도는 원) */
+.loading-spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #ff2d2d;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    /* animation 속성을 더 확실하게 부여 */
+    animation: spin 1s linear infinite !important;
+}
+
+/* 4. 로딩 안내 문구 */
+.loading-text {
+    color: #ffffff;
+    margin-top: 15px;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: -0.5px;
+}

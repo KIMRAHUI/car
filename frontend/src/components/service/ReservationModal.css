@@ -1,0 +1,230 @@
+/* 1. 모달 전체 오버레이 및 컨테이너 */
+.res-modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5000;
+    backdrop-filter: blur(0.125rem); /* 2px */
+}
+
+.res-modal-content {
+    background: #FFFFFF;
+    width: 27.5rem; /* 440px */
+    max-height: 85vh;
+    border-radius: 0.25rem; /* 4px */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2);
+}
+
+/* 2. 공통 헤더 */
+.res-header {
+    background: #D9D9D9;
+    padding: 0.875rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.res-header h2 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1A1A1A;
+    margin: 0;
+}
+
+.close-x {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #333;
+}
+
+/* 3. 내부 바디 스타일 */
+.res-body {
+    padding: 1.5rem 1.875rem;
+    flex: 1;
+}
+
+.step-container h3 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #000;
+}
+
+/* 4. Step 1: 업체 상세 및 탭 메뉴 (좌우 정렬 수정) */
+.banner-img {
+    width: 100%;
+    height: 11.25rem; /* 180px */
+    object-fit: cover;
+    margin-bottom: 0.9375rem;
+}
+
+.rating-text {
+    font-size: 0.9rem;
+    color: #666;
+    margin-left: 0.625rem;
+}
+
+/* [핵심 수정] 탭 메뉴 버튼들을 좌우 나란히 배치 */
+.tab-menu {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    border-bottom: 0.0625rem solid #D9D9D9;
+    margin-bottom: 1.25rem;
+}
+
+.tab-menu button {
+    flex: 1; /* 가로 공간 균등 배분 */
+    padding: 0.75rem 0;
+    background: none;
+    border: none;
+    font-weight: 700;
+    color: #888;
+    cursor: pointer;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.tab-menu button.active {
+    color: #000;
+    border-bottom: 0.125rem solid #000; /* 하단 강조 라인 */
+}
+
+/* 5. Step 2: 카테고리 버튼 */
+.cat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cat-btn {
+    background: #D9E0FF;
+    border: none;
+    border-radius: 0.375rem; /* 6px */
+    padding: 1.375rem 1.5625rem;
+    display: flex;
+    align-items: center;
+    gap: 1.125rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+    transition: transform 0.2s;
+    text-align: left;
+}
+
+.cat-btn:hover {
+    transform: scale(1.02);
+    background: #CFD7FF;
+}
+
+.cat-btn img {
+    width: 1.75rem; /* 28px */
+}
+
+/* 6. Step 3: 체크박스 및 태그 스타일 */
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.9375rem 0;
+    min-height: 1.875rem;
+}
+
+.tag {
+    background: #E8E8E8;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.125rem; /* 2px */
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #333;
+}
+
+/* 7. 공통 버튼 */
+.next-btn-black {
+    width: 100%;
+    padding: 1rem;
+    background: #1A1A1A;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 0.25rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 0.625rem;
+    font-size: 1rem;
+}
+
+.next-btn-gray {
+    width: 100%;
+    padding: 1rem;
+    background: #D9D9D9;
+    color: #1A1A1A;
+    border: none;
+    border-radius: 0.25rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 0.625rem;
+    font-size: 1rem;
+}
+
+.next-btn-gray:hover {
+    background: #CCCCCC;
+}
+
+/* 8. Step 4: 시간 선택 그리드 */
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.625rem;
+    margin-top: 1.25rem;
+}
+
+.time-grid button {
+    padding: 0.625rem;
+    background: #FFFFFF;
+    border: 0.0625rem solid #D9D9D9;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.time-grid button.active {
+    background: #1A1A1A;
+    color: #FFFFFF;
+    border-color: #1A1A1A;
+}
+
+/* 9. Step 5: 완료 화면 */
+.step-5 {
+    text-align: center;
+    padding: 2.5rem 0;
+}
+
+.guide-msg {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 1.25rem 0;
+}
+
+
+.final-info {
+    background: #F8F8F8;
+    padding: 0.9375rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1.25rem;
+    text-align: left;
+}

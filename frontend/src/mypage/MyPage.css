@@ -1,0 +1,432 @@
+/* 전체 배경 및 래퍼 */
+.mypage-wrapper {
+    background-color: #D6D6D6; /* 제공해주신 이미지와 유사한 라이트 그레이 배경 */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+.auth-header-layer {
+    background-color: white;
+    width: 100%;
+    position: relative;
+    z-index: 1000;
+}
+
+/* --------------------------------------
+   비회원 상태 UI
+--------------------------------------- */
+.guest-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.guest-box {
+    background: white;
+    padding: 4rem 3rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1);
+}
+
+.guest-box h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #1A1A1A;
+    font-weight: 800;
+}
+
+.guest-box p {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 2.5rem;
+}
+
+.guest-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-login, .btn-signup {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-login {
+    background-color: #1A1A1A;
+    color: white;
+}
+
+.btn-signup {
+    background-color: #E8E8E8;
+    color: #333;
+}
+
+.btn-login:hover { background-color: #333; }
+.btn-signup:hover { background-color: #D0D0D0; }
+
+/* --------------------------------------
+   로그인 회원 상태 메인 레이아웃
+--------------------------------------- */
+.mypage-main {
+    display: flex;
+    padding: 3rem 4rem 4rem;
+    gap: 2rem;
+    max-width: 90rem;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 좌측 패널 (약 60%) */
+.left-panel {
+    flex: 1.6;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 우측 패널 (약 40%) */
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 1.5rem; /* 좌측 헤더 높이만큼 약간 내림 */
+}
+
+/* --------------------------------------
+   좌측 패널 상세 디자인
+--------------------------------------- */
+.car-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.brand-logo {
+    background-color: #003478; /* 포드 로고 색상 느낌 */
+    color: white;
+    padding: 0.2rem 1rem;
+    border-radius: 1rem;
+    font-weight: 800;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+.car-name {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #1A1A1A;
+    margin: 0;
+    letter-spacing: -0.05rem;
+}
+
+.car-image-container {
+    width: 100%;
+    height: 25rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    background-color: #000;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+}
+
+.car-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 공통 탭 버튼 스타일 */
+.tabs {
+    display: flex;
+}
+
+.tab-btn {
+    padding: 0.75rem 2rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.25rem 0.25rem 0 0;
+    color: #666;
+    background-color: #CFCFCF; /* 기본 비활성 탭 색상 */
+    transition: all 0.2s ease;
+}
+
+/* 좌측 탭 액티브 상태에 따른 색상 변화 (이미지 반영) */
+.tab-btn.active-account {
+    background-color: #FFFFFF;
+    color: #1A1A1A;
+}
+.tab-btn.active-check {
+    background-color: #E8E8E8;
+    color: #1A1A1A;
+}
+.tab-btn.active-replace {
+    background-color: #C4C4C4;
+    color: #1A1A1A;
+}
+
+.tab-content {
+    min-height: 12.5rem;
+    border-radius: 0 0.5rem 0.5rem 0.5rem;
+    padding: 2rem;
+}
+
+/* 좌측 탭 컨텐츠 배경색 매칭 */
+.left-content-account { background-color: #FFFFFF; }
+.left-content-check { background-color: #E8E8E8; }
+.left-content-replace { background-color: #C4C4C4; }
+
+/* ACCOUNT 정보 스타일 */
+.account-info .info-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.account-info h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #333;
+    margin: 0;
+}
+
+.info-actions button {
+    background: #E0E0E0;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0.125rem;
+}
+
+.account-info p, .check-info p, .replace-info p {
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.8;
+    margin: 0 0 0.5rem 0;
+}
+
+.check-info h3, .replace-info h3 {
+    font-size: 1.125rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    color: #1A1A1A;
+}
+
+/* --------------------------------------
+   우측 패널 상세 디자인
+--------------------------------------- */
+.right-tab-btn {
+    background-color: #CFCFCF;
+}
+.right-tab-btn.active {
+    background-color: #FFFFFF;
+    color: #1A1A1A;
+}
+
+.right-content {
+    background-color: #FFFFFF;
+    border-radius: 0 0.5rem 0.5rem 0.5rem;
+    padding: 2rem;
+    flex: 1;
+    box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.05);
+}
+
+/* 달력 모의 UI (Grid) */
+.calendar-mock {
+    margin-bottom: 2rem;
+}
+
+.cal-header {
+    text-align: center;
+    font-size: 1.125rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-top: 0.125rem solid #1A1A1A;
+    border-bottom: 0.125rem solid #1A1A1A;
+}
+
+.day-name {
+    text-align: center;
+    font-weight: 800;
+    padding: 0.75rem 0;
+    border-bottom: 0.063rem solid #E0E0E0;
+    font-size: 0.875rem;
+}
+
+.day {
+    text-align: center;
+    padding: 1rem 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-bottom: 0.063rem solid #E0E0E0;
+    border-right: 0.063rem solid #E0E0E0;
+    position: relative;
+}
+
+.day:nth-child(7n) { border-right: none; }
+.day.empty { background-color: #F9F9F9; }
+
+/* 5일 예약된 날짜 스타일 */
+.active-day {
+    background-color: #333333;
+    color: white;
+}
+
+.time-mark {
+    display: block;
+    font-size: 0.5rem;
+    margin-top: 0.25rem;
+    color: #CCC;
+}
+
+/* 정비소 상세 내역 공통 (예약/히스토리) */
+.shop-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin: 0 0 0.25rem 0;
+}
+
+.shop-phone {
+    font-size: 0.75rem;
+    color: #888;
+    margin: 0 0 1rem 0;
+}
+
+.repair-images {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.repair-images img {
+    width: 48%;
+    height: 6rem;
+    object-fit: cover;
+    border-radius: 0.25rem;
+}
+
+.repair-desc p {
+    font-size: 0.813rem;
+    color: #444;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.res-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.res-actions button {
+    background: #E0E0E0;
+    border: none;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.125rem;
+    cursor: pointer;
+}
+
+/* 히스토리 전용 스타일 */
+.history-card {
+    margin-bottom: 2rem;
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.history-header h2 {
+    font-size: 1.5rem;
+    font-weight: 300; /* 이미지처럼 얇은 폰트 느낌 */
+    margin: 0;
+    letter-spacing: -0.05rem;
+}
+
+.tag-type {
+    font-size: 0.688rem;
+    padding: 0.125rem 0.4rem;
+    border: 0.063rem solid #CCC;
+    border-radius: 0.125rem;
+    color: #555;
+    font-weight: 600;
+}
+
+.btn-review {
+    margin-left: auto;
+    background: none;
+    border: 0.063rem solid #CCC;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.688rem;
+    border-radius: 0.125rem;
+    cursor: pointer;
+}
+
+.history-divider {
+    border-top: 0.063rem dashed #CCC;
+    margin: 2rem 0;
+}
+
+/* --------------------------------------
+   반응형 미디어 쿼리 (1024px, 768px)
+--------------------------------------- */
+@media screen and (max-width: 1024px) {
+    .mypage-main {
+        padding: 2rem 1.5rem;
+        gap: 1.5rem;
+    }
+    .car-image-container {
+        height: 20rem;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .mypage-main {
+        flex-direction: column;
+    }
+    .left-panel{
+        margin-top:1.5rem
+    }
+    .left-panel, .right-panel {
+        width: 100%;
+        flex: none;
+    }
+    .right-panel {
+        padding-top: 0;
+    }
+    .car-image-container {
+        height: 15rem;
+    }
+}

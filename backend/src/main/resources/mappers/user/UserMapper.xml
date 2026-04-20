@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.krh.backend.mappers.user.UserMapper">
+
+    <insert id="insertUser" parameterType="com.krh.backend.entities.user.UserEntity">
+        INSERT INTO `car`.`users` (
+            `email`, `password`, `name`, `phone`,
+            `car_model`, `car_number`, `fuel_type`, `mileage`,
+            `annual_mileage`, `driving_env`,
+            `social_type_code`, `social_id`
+        ) VALUES (
+                     #{user.email}, #{user.password}, #{user.name}, #{user.phone},
+                     #{user.carModel}, #{user.carNumber}, #{user.fuelType}, #{user.mileage},
+                     #{user.annualMileage}, #{user.drivingEnv},
+                     #{user.socialTypeCode}, #{user.socialId}
+                 )
+    </insert>
+
+    <insert id="insertEmailToken" parameterType="com.krh.backend.entities.user.EmailTokenEntity">
+        INSERT INTO `car`.`email_tokens` (
+            `email`, `code`, `salt`, `expires_at`
+        ) VALUES (
+                     #{token.email}, #{token.code}, #{token.salt}, #{token.expiresAt}
+                 )
+    </insert>
+
+    <update id="updateUserInfo" parameterType="com.krh.backend.entities.user.UserEntity">
+        UPDATE `car`.`users`
+        SET `password`       = #{user.password},
+            `phone`          = #{user.phone},
+            `car_model`      = #{user.carModel},
+            `car_number`     = #{user.carNumber},
+            `fuel_type`      = #{user.fuelType},
+            `mileage`        = #{user.mileage},
+            `annual_mileage` = #{user.annualMileage},
+            `driving_env`    = #{user.drivingEnv}
+        WHERE `email` = #{user.email}
+        LIMIT 1
+    </update>
+
+    <update id="updateEmailToken" parameterType="com.krh.backend.entities.user.EmailTokenEntity">
+        UPDATE `car`.`email_tokens`
+        SET `code`        = #{token.code},
+            `salt`        = #{token.salt},
+            `retry_count` = IF(`is_used` = TRUE, 0, `retry_count` + 1),
+            `expires_at`  = #{token.expiresAt},
+            `created_at`  = NOW(),
+            `is_verified` = FALSE,
+            `is_used`     = FALSE
+        WHERE `email` = #{token.email}
+        LIMIT 1
+    </update>
+
+    <update id="updateEmailTokenVerified">
+        UPDATE `car`.`email_tokens`
+        SET `is_verified` = TRUE
+        WHERE `email` = #{email}
+          AND `code` = #{code}
+          AND `expires_at` > NOW()
+        LIMIT 1
+    </update>
+
+    <update id="updateEmailTokenUsed">
+        UPDATE `car`.`email_tokens`
+        SET `is_used` = TRUE
+        WHERE `email` = #{email}
+        LIMIT 1
+    </update>
+
+    <delete id="deleteByUser">
+        DELETE FROM `car`.`users`
+        WHERE `email` = #{email}
+        LIMIT 1
+    </delete>
+
+    <select id="selectByEmail" resultType="com.krh.backend.entities.user.UserEntity">
+        SELECT `email`, `password`, `name`, `phone`,
+               `car_model` AS `carModel`,
+               `car_number` AS `carNumber`,
+               `fuel_type` AS `fuelType`,
+               `mileage`,
+               `annual_mileage` AS `annualMileage`,
+               `driving_env` AS `drivingEnv`,
+               `created_at` AS `createdAt`,
+               `social_type_code` AS `socialTypeCode`,
+               `social_id` AS `socialId`
+        FROM `car`.`users`
+        WHERE `email` = #{email}
+    </select>
+
+    <select id="selectBySocialInfo" resultType="com.krh.backend.entities.user.UserEntity">
+        SELECT `email`, `password`, `name`, `phone`,
+               `car_model` AS `carModel`,
+               `car_number` AS `carNumber`,
+               `fuel_type` AS `fuelType`,
+               `mileage`,
+               `annual_mileage` AS `annualMileage`,
+               `driving_env` AS `drivingEnv`,
+               `created_at` AS `createdAt`,
+               `social_type_code` AS `socialTypeCode`,
+               `social_id` AS `socialId`
+        FROM `car`.`users`
+        WHERE `social_type_code` = #{socialTypeCode}
+          AND `social_id` = #{socialId}
+    </select>
+
+    <select id="selectEmailTokenByEmail" resultType="com.krh.backend.entities.user.EmailTokenEntity">
+        SELECT `email`, `code`, `salt`,
+               `retry_count` AS `retryCount`,
+               `is_verified` AS `isVerified`,
+               `is_used` AS `isUsed`,
+               `created_at` AS `createdAt`,
+               `expires_at` AS `expiresAt`
+        FROM `car`.`email_tokens`
+        WHERE `email` = #{email}
+        ORDER BY `created_at` DESC
+        LIMIT 1
+    </select>
+
+</mapper>
