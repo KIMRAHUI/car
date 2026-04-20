@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // useRef 추가
 import deleteIcon from '../../assets/image/modal/Close.png';
 import addImageIcon from '../../assets/image/modal/addImage.png';
 import useEmailAuth from '../../assets/javascript/useEmailAuth';
-import AuthAlertModal from '../../components/auth/AuthAlertModal.jsx'; // [추가] 커스텀 모달 임포트
+import AuthAlertModal from '../../components/auth/AuthAlertModal.jsx';
 import './MyPageModal.css';
 import '../../auth/Label.css';
 
@@ -13,7 +13,11 @@ const PersonalInfoEditModal = ({ onClose }) => {
     const [newPassword, setNewPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    //커스텀 모달 상태 관리
+    // [추가] 이미지 관련 상태 및 Ref
+    const [selectedFile, setSelectedFile] = useState(null); // 서버 전송용
+    const [previewUrl, setPreviewUrl] = useState(null);    // 화면 표시용
+    const fileInputRef = useRef(null); // input 태그에 직접 접근하기 위함
+
     const [alertConfig, setAlertConfig] = useState({
         show: false,
         title: '',
@@ -21,12 +25,10 @@ const PersonalInfoEditModal = ({ onClose }) => {
         onConfirm: null
     });
 
-    // 커스텀 알림 호출 도우미
     const showAlert = (title, message, onConfirm = null) => {
         setAlertConfig({ show: true, title, message, onConfirm });
     };
 
-    // 이메일 인증 훅
     const {
         timeLeft,
         isTimerActive,
@@ -37,26 +39,38 @@ const PersonalInfoEditModal = ({ onClose }) => {
         verifyEmailCode
     } = useEmailAuth(newEmail, 'EDIT');
 
-    // 버튼 활성화 조건 체크 (이메일 인증 완료 && 모든 필드 입력)
     const isFormValid = isVerified && currentPassword.trim() !== '' && newPassword.trim() !== '';
 
-    /**
-     * 서버 DB 업데이트 호출 함수
-     */
+    // [추가] 박스 클릭 시 숨겨진 input 실행
+    const handlePlaceholderClick = () => {
+        fileInputRef.current.click();
+    };
+
+    // [추가] 파일 선택 시 미리보기 생성
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result); // Base64로 미리보기 이미지 설정
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleUpdateInfo = () => {
-        if (!isFormValid) return; // 버튼 비활성화 상태면 실행 안함
+        if (!isFormValid) return;
 
         setIsSubmitting(true);
 
         const xhr = new XMLHttpRequest();
         const fd = new FormData();
 
-        /**
-         * [500 에러 해결 핵심]
-         * UserMapper.xml의 updateUserInfo는 phone 등 모든 필드를 업데이트합니다.
-         * 프론트에서 password만 보내면 phone이 null이 되어 DB 에러가 발생하므로,
-         * 백엔드 MyPageController에서 기존 유저 정보를 로드하여 병합하는 처리가 반드시 필요합니다.
-         */
+        // [핵심] 이미지 파일이 있으면 FormData에 추가
+        if (selectedFile) {
+            fd.append('profileImage', selectedFile);
+        }
         fd.append('email', newEmail);
         fd.append('password', newPassword);
         fd.append('currentPassword', currentPassword);
@@ -68,9 +82,7 @@ const PersonalInfoEditModal = ({ onClose }) => {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         const response = JSON.parse(xhr.responseText);
-
                         if (response.result === 'success') {
-                            // 브라우저 alert 대신 커스텀 모달 실행
                             showAlert(
                                 "수정 완료",
                                 "개인정보가 성공적으로 변경되었습니다.\n안전한 이용을 위해 다시 로그인해 주세요.",
@@ -97,7 +109,6 @@ const PersonalInfoEditModal = ({ onClose }) => {
 
     return (
         <>
-            {/* 기존 개인정보 수정 모달 레이어 */}
             <div className="modal-overlay" onClick={onClose}>
                 {(isLoading || isSubmitting) && (
                     <div className="auth-loading-overlay">
@@ -115,10 +126,27 @@ const PersonalInfoEditModal = ({ onClose }) => {
                     </div>
 
                     <div className="modal-body-scroll">
+                        {/* [수정 부분] 클릭 이벤트 추가 및 숨겨진 Input 배치 */}
                         <div className="profile-upload-section">
-                            <div className="image-placeholder">
-                                <img src={addImageIcon} alt="Add" className="add-img-icon" />
+                            <div
+                                className="image-placeholder"
+                                onClick={handlePlaceholderClick}
+                                style={{ cursor: 'pointer', overflow: 'hidden' }}
+                            >
+                                {previewUrl ? (
+                                    <img src={previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <img src={addImageIcon} alt="Add" className="add-img-icon" />
+                                )}
                             </div>
+                            {/* 실제 파일 선택창 (숨김 처리) */}
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                            />
                             <p className="upload-guide">*프로필 사진을 선택해주세요</p>
                         </div>
 
@@ -190,7 +218,6 @@ const PersonalInfoEditModal = ({ onClose }) => {
                             />
                         </div>
 
-                        {/* 조건 충족 시 배경색 변경 (isFormValid 값에 따라 클래스 분기) */}
                         <button
                             className={`btn-primary-gray ${isFormValid ? 'active-black' : ''}`}
                             onClick={handleUpdateInfo}
@@ -202,7 +229,6 @@ const PersonalInfoEditModal = ({ onClose }) => {
                 </div>
             </div>
 
-            {/* 커스텀 알림 모달을 오버레이 바깥 최상단으로 분리 */}
             {alertConfig.show && (
                 <AuthAlertModal
                     title={alertConfig.title}

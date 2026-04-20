@@ -7,12 +7,12 @@
             `email`, `password`, `name`, `phone`,
             `car_model_id`, `car_number`, `fuel_type`, `mileage`,
             `annual_mileage`, `driving_env`,
-            `social_type_code`, `social_id`
+            `social_type_code`, `social_id`, `profile_image`
         ) VALUES (
                      #{user.email}, #{user.password}, #{user.name}, #{user.phone},
                      #{user.carModelId}, #{user.carNumber}, #{user.fuelType}, #{user.mileage},
                      #{user.annualMileage}, #{user.drivingEnv},
-                     #{user.socialTypeCode}, #{user.socialId}
+                     #{user.socialTypeCode}, #{user.socialId}, #{user.profileImage}
                  )
     </insert>
 
@@ -25,7 +25,8 @@
             `fuel_type`      = #{user.fuelType},
             `mileage`        = #{user.mileage},
             `annual_mileage` = #{user.annualMileage},
-            `driving_env`    = #{user.drivingEnv}
+            `driving_env`    = #{user.drivingEnv},
+            `profile_image`  = #{user.profileImage}
         WHERE `email` = #{user.email}
         LIMIT 1
     </update>
@@ -42,7 +43,8 @@
                u.`driving_env`    AS `drivingEnv`,
                u.`created_at`     AS `createdAt`,
                u.`social_type_code` AS `socialTypeCode`,
-               u.`social_id`      AS `socialId`
+               u.`social_id`      AS `socialId`,
+               u.`profile_image`  AS `profileImage`
         FROM `car`.`users` u
                  LEFT JOIN `car`.`car_models` m ON u.`car_model_id` = m.`model_id`
                  LEFT JOIN `car`.`car_brands` b ON m.`brand_id` = b.`brand_id`
@@ -61,7 +63,8 @@
                u.`driving_env`    AS `drivingEnv`,
                u.`created_at`     AS `createdAt`,
                u.`social_type_code` AS `socialTypeCode`,
-               u.`social_id`      AS `socialId`
+               u.`social_id`      AS `socialId`,
+               u.`profile_image`  AS `profileImage`
         FROM `car`.`users` u
                  LEFT JOIN `car`.`car_models` m ON u.`car_model_id` = m.`model_id`
                  LEFT JOIN `car`.`car_brands` b ON m.`brand_id` = b.`brand_id`

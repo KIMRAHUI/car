@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import Header from '../components/header/Header.jsx';
 import './MyPage.css';
 import {Link} from "react-router-dom";
@@ -29,6 +29,9 @@ import AuthAlertModal from '../components/auth/AuthAlertModal.jsx';
 import ReviewModal from '../components/mypage/ReviewModal.jsx'; // 👈 후기 모달 임포트
 
 const MyPage = () => {
+
+    // [추가] 파일 입력을 위한 Ref
+    const fileInputRef = useRef(null);
 
     // 페이지 진입 시 스크롤 최상단 이동
     useEffect(() => {
@@ -125,6 +128,41 @@ const MyPage = () => {
     useEffect(() => {
         fetchUserInfo();
     }, []);
+
+    /**
+     * [추가] 이미지 즉시 업로드 핸들러
+     * 이미지 클릭 시 인증 없이 프로필 사진만 즉시 업데이트합니다.
+     */
+    const handleImageClickUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const fd = new FormData();
+        fd.append('profileImage', file);
+        fd.append('email', user.email);
+        // 비밀번호와 현재비밀번호는 빈 값을 보내 사진만 수정함을 서버에 알림
+        fd.append('password', "");
+        fd.append('currentPassword', "");
+
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.result === "success") {
+                            fetchUserInfo(); // 화면 갱신
+                        }
+                    } catch (e) {
+                        console.error("Parse Error");
+                    }
+                }
+            }
+        };
+        xhr.open('POST', '/mypage/update');
+        xhr.withCredentials = true;
+        xhr.send(fd);
+    };
 
 
     // 탈퇴 실제 처리 핸들러 (alert -> showAlert 교체)
@@ -231,8 +269,25 @@ const MyPage = () => {
                         <h1 className="car-name">{user?.carNumber || "MUSTANG"}</h1>
                     </div>
 
-                    <div className="car-image-container">
-                        <img src={carImage} alt="Mustang" className="car-image"/>
+                    {/* [수정] 프로필 이미지 클릭 시 파일 탐색기 즉시 실행 및 캐시 방지 적용 */}
+                    <div className="car-image-container" onClick={() => fileInputRef.current.click()} style={{ cursor: 'pointer' }}>
+                        <img
+                            src={user?.profileImage
+                                ? `${user.profileImage}?t=${new Date().getTime()}`
+                                : carImage
+                            }
+                            alt="Profile"
+                            className="car-image"
+                            onError={(e) => { e.target.src = carImage; }}
+                        />
+                        {/* 숨겨진 파일 인풋 (실제 탐색기를 여는 역할) */}
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageClickUpload}
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                        />
                     </div>
 
                     <div className="left-tabs-container">
@@ -531,10 +586,16 @@ const MyPage = () => {
                 />
             )}
 
-            {/* 4. 개인정보 수정 모달 */}
+            {/* 4. 개인정보 수정 모달 [개선]
+                이미지 변경 후 즉시 반영을 위해 onSuccess 콜백 추가
+            */}
             {activeModal === 'personalEdit' && (
                 <PersonalInfoEditModal
                     onClose={() => setActiveModal(null)}
+                    onSuccess={() => {
+                        fetchUserInfo(); // 데이터 새로고침
+                        setActiveModal(null);
+                    }}
                 />
             )}
 

@@ -10,8 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -45,11 +49,15 @@ public class MyPageController extends CommonController {
 
     /**
      * 회원 정보 수정
-     * UserService.updateUserInfo의 매개변수 변경에 맞춰 currentPassword 추가
+     * [비상구 로직 설계]
+     * 1. currentPassword가 있으면: 기존의 철저한 '통합 개인정보 수정' (이메일, 비밀번호 인증 필수)
+     * 2. currentPassword가 없으면: 사진 클릭을 통한 '프로필 이미지 즉시 변경' (비밀번호 인증 건너뜀)
      */
     @PostMapping(value = "/update", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Object> postUpdate(UserEntity user,
-                                          @RequestParam("currentPassword") String currentPassword,
+    public Map<String, Object> postUpdate(@RequestParam("email") String email,
+                                          @RequestParam(value = "password", required = false) String password,
+                                          @RequestParam(value = "currentPassword", required = false) String currentPassword,
+                                          @RequestParam(value = "profileImage", required = false) MultipartFile file,
                                           HttpSession session) {
 
         UserEntity sessionUser = (UserEntity) session.getAttribute("sessionUser");
@@ -57,15 +65,56 @@ public class MyPageController extends CommonController {
             return this.resolveResult(CommonResult.FAILURE);
         }
 
-        //  DB에서 최신 정보를 먼저 가져옴
+        // 1. DB에서 최신 정보를 먼저 가져옴
         UserEntity currentUser = this.userService.getUserByEmail(sessionUser.getEmail());
 
-        // 프론트에서 보낸 '새 비밀번호'와 '새 이메일'만 업데이트 대상 객체에 설정,
-        // 나머지 필드(phone, carModel 등)는 기존 정보를 유지.
-        currentUser.setPassword(user.getPassword());
-        // 만약 이메일도 변경한다면 currentUser.setEmail(user.getEmail());
+        // 2. 파일 업로드 처리 (즉시 변경이든 통합 수정이든 파일이 있으면 공통 실행)
+        if (file != null && !file.isEmpty()) {
+            try {
+                String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+                String uploadPath = "C:/Users/노오리/Desktop/carmit_uploads/profile/";
 
-        // 수정된 객체와 기존 비밀번호를 서비스로 전달
+                File folder = new File(uploadPath);
+                if (!folder.exists()) {
+                    folder.mkdirs();
+                }
+
+                file.transferTo(new File(uploadPath + fileName));
+
+                // DB에 저장할 웹 접근 경로 설정
+                currentUser.setProfileImage("/upload/profile/" + fileName);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return this.resolveResult(CommonResult.FAILURE);
+            }
+        }
+
+        // [핵심 비상구 분기]
+        // 현재 비밀번호(currentPassword)가 넘어오지 않은 경우는 '이미지만 즉시 변경'하는 상황임
+        if (currentPassword == null || currentPassword.trim().isEmpty()) {
+            // 비밀번호 검증 없이 이미지 경로만 업데이트하도록 기존 서비스 로직 대신 개별 업데이트 로직 태움
+            // 기존 updateUserInfo 메서드 대신 profileImage만 업데이트하는 별도 로직이 필요하거나
+            // 서비스에서 null 체크를 통해 이미지 정보를 반영해줘야 합니다.
+            // 여기서는 currentUser에 이미 profileImage가 세팅되었으므로,
+            // 비밀번호 확인 절차를 생략하고 바로 성공 처리를 위한 서비스 메서드를 호출하거나 updateUserInfo 내부 수정을 가정합니다.
+
+            // 만약 userService에 이미지만 업데이트하는 전용 메서드가 없다면
+            // pair 처리를 모방하여 성공 응답을 내려줍니다.
+            Result imageUpdateResult = this.userService.updateProfileImageOnly(currentUser);
+            if (imageUpdateResult == CommonResult.SUCCESS) {
+                session.setAttribute("sessionUser", currentUser);
+                return this.resolveResult(CommonResult.SUCCESS);
+            } else {
+                return this.resolveResult(CommonResult.FAILURE);
+            }
+        }
+
+        // 3. 통합 수정 모드: 프론트에서 보낸 '새 비밀번호'와 '새 이메일' 설정
+        currentUser.setPassword(password);
+        currentUser.setEmail(email);
+
+        // 4. 서비스 호출 (기존 비밀번호 검증 절차 포함)
         Pair<Result, UserEntity> pair = this.userService.updateUserInfo(currentUser, currentPassword);
 
         if (pair.getLeft() == CommonResult.SUCCESS) {

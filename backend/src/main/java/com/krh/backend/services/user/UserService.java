@@ -124,6 +124,7 @@ public class UserService {
     @Transactional
     public Pair<Result, UserEntity> register(UserEntity user) {
         if (!UserValidator.validateRegister(user)) {
+//            System.out.println("로그: 유효성 검사(Validator)에서 실패함");
             return Pair.of(CommonResult.FAILURE, null);
         }
 
@@ -133,6 +134,7 @@ public class UserService {
 
         // 보안: 회원가입 시 전달된 carModelId가 유효한지 검증
         if (user.getCarModelId() != null && this.userMapper.countModelById(user.getCarModelId()) == 0) {
+//            System.out.println("로그: DB에 carModelId 69번이 존재하지 않음");
             return Pair.of(CommonResult.FAILURE, null);
         }
 
@@ -265,6 +267,20 @@ public class UserService {
         user.setCarModelId(carModelId);
         user.setCarNumber(carNumber);
 
+        return this.userMapper.updateUserInfo(user) > 0 ? CommonResult.SUCCESS : CommonResult.FAILURE;
+    }
+
+    /**
+     * [UPDATE] 프로필 이미지만 즉시 수정 (마이페이지 직접 클릭 전용)
+     * 비밀번호 검증 절차를 생략하고 이미지 경로만 업데이트합니다.
+     */
+    @Transactional
+    public Result updateProfileImageOnly(UserEntity user) {
+        if (user == null || user.getEmail() == null) {
+            return CommonResult.FAILURE;
+        }
+        // 기존 updateUserInfo 매퍼는 모든 필드를 덮어쓰므로 그대로 사용 가능합니다.
+        // 단, 호출 전 Controller에서 비밀번호 필드 등이 오염되지 않았는지 확인이 필요합니다.
         return this.userMapper.updateUserInfo(user) > 0 ? CommonResult.SUCCESS : CommonResult.FAILURE;
     }
 }
