@@ -10,7 +10,7 @@ const Login = () => {
     const [viewMode, setViewMode] = useState('login');
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [rememberMe, setRememberMe] = useState(false);
+    // [제거] rememberMe 상태 변수를 삭제했습니다.
 
     // [추가] 모달 상태 관리
     const [modalConfig, setModalConfig] = useState({
@@ -34,23 +34,13 @@ const Login = () => {
         setModalConfig({ show: true, title, message });
     };
 
+    /**
+     * [수정] 컴포넌트 마운트 시 로직
+     * 보안을 위해 기존에 저장되어 있을 수 있는 '이메일 기억하기' 데이터를 삭제합니다.
+     */
     useEffect(() => {
-        const savedData = localStorage.getItem('rememberedEmailData');
-        if (savedData) {
-            try {
-                const { email, savedAt } = JSON.parse(savedData);
-                const now = new Date().getTime();
-                const threeMonths = 90 * 24 * 60 * 60 * 1000;
-                if (now - savedAt < threeMonths) {
-                    setFormData(prev => ({ ...prev, email: email }));
-                    setRememberMe(true);
-                } else {
-                    localStorage.removeItem('rememberedEmailData');
-                }
-            } catch (e) {
-                localStorage.removeItem('rememberedEmailData');
-            }
-        }
+        window.scrollTo(0, 0);
+        localStorage.removeItem('rememberedEmailData');
     }, []);
 
     const {
@@ -68,26 +58,28 @@ const Login = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    /**
+     * [수정] 소셜 로그인 핸들러
+     * 소셜 로그인 시 폼 데이터를 초기화하여 세션 간섭을 방지합니다.
+     */
     const handleSocialLogin = (provider) => {
+        // 소셜 로그인 창으로 이동하기 전 폼의 이메일 상태를 비워줍니다.
+        setFormData(prev => ({ ...prev, email: '' }));
+
+        // OAuth2 인증 경로로 리다이렉트
         window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
     };
 
+    /**
+     * [수정] 일반 로그인 핸들러
+     * '이메일 기억하기' 저장 로직을 제거했습니다.
+     */
     const handleLogin = (e) => {
         if (e) e.preventDefault();
 
         if (!formData.email || !formData.password) {
             showAlert('입력 오류', '이메일과 비밀번호를 모두 입력해주세요.');
             return;
-        }
-
-        if (rememberMe) {
-            const dataToSave = {
-                email: formData.email,
-                savedAt: new Date().getTime()
-            };
-            localStorage.setItem('rememberedEmailData', JSON.stringify(dataToSave));
-        } else {
-            localStorage.removeItem('rememberedEmailData');
         }
 
         const xhr = new XMLHttpRequest();
@@ -103,12 +95,9 @@ const Login = () => {
                 const result = response.result;
 
                 if (result === 'success') {
-                    // 성공 알림 후 이동은 모달 확인 버튼 로직에 넣거나,
-                    // 지금은 편의상 alert 유지 혹은 확인 클릭 시 이동하게 고도화 가능하나
-                    // 일단 요구사항대로 디자인 변경에 집중합니다.
                     showAlert('성공', '로그인에 성공하였습니다.');
                     localStorage.setItem('isLoggedIn', 'true');
-                    setTimeout(() => navigate('/'), 1500); // 모달 볼 시간 확보
+                    setTimeout(() => navigate('/'), 1500);
                 } else if (result === 'user_not_found') {
                     showAlert('로그인 실패', '존재하지 않는 이메일 계정입니다.');
                 } else if (result === 'wrong_password') {
@@ -228,15 +217,7 @@ const Login = () => {
                                     />
                                 </div>
 
-                                <div className="auth-option-row">
-                                    <input
-                                        type="checkbox"
-                                        id="remember"
-                                        checked={rememberMe}
-                                        onChange={(e) => setRememberMe(e.target.checked)}
-                                    />
-                                    <label htmlFor="remember">이메일을 기억하시겠습니까?</label>
-                                </div>
+                                {/* [제거] 이메일 기억하기 체크박스 영역을 삭제했습니다. */}
 
                                 <button type="submit" className="btn-primary-black">LOGIN</button>
 
@@ -333,7 +314,6 @@ const Login = () => {
                 </div>
             </div>
 
-            {/* [추가] 커스텀 모달 렌더링 */}
             {modalConfig.show && (
                 <AuthAlertModal
                     title={modalConfig.title}

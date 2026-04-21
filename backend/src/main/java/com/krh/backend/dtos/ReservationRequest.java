@@ -1,8 +1,9 @@
-package com.krh.backend.dtos.service;
+package com.krh.backend.dtos;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -30,5 +31,13 @@ public class ReservationRequest {
     // 5. 선택 항목 리스트 (다중 선택 대응)
     // - 일반: 선택한 소모품 리스트
     // - 사고: 선택한 파손 부위 리스트 (#앞범퍼, #휀다 등)
+    // - 고장: 선택한 고장 타입 (엔진/출력 저하 등)
     private List<String> items;
+
+    /**
+     * 업로드 이미지 파일 리스트 (최대 2장)
+     * 프론트엔드에서 FormData로 'images'라는 키값에 파일을 담아 보낼 때 매핑됩니다.
+     * List로 받으면 image1, image2를 유연하게 처리할 수 있습니다.
+     */
+    private List<MultipartFile> images;
 }

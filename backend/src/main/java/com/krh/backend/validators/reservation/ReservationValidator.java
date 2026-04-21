@@ -1,7 +1,6 @@
 package com.krh.backend.validators.reservation;
 
-import com.krh.backend.dtos.service.ReservationRequest;
-import com.krh.backend.validators.ValidatorUtils;
+import com.krh.backend.dtos.ReservationRequest;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass

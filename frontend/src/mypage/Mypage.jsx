@@ -27,7 +27,7 @@ import EditChoiceModal from '../components/mypage/EditChoiceModal.jsx';
 import VehicleEditModal from '../components/mypage/VehicleEditModal.jsx';
 import PersonalInfoEditModal from '../components/mypage/PersonalInfoEditModal.jsx';
 import AuthAlertModal from '../components/auth/AuthAlertModal.jsx';
-import ReviewModal from '../components/mypage/ReviewModal.jsx'; // 👈 후기 모달 임포트
+import ReviewModal from '../components/mypage/ReviewModal.jsx';
 
 const MyPage = () => {
 
@@ -45,13 +45,17 @@ const MyPage = () => {
     // 사용자 정보
     const [user, setUser] = useState(null);
 
+    // [추가] 예약 목록 및 수정 데이터 상태
+    const [reservations, setReservations] = useState([]);
+    const [editingReservation, setEditingReservation] = useState(null);
+
     // 좌측 탭 상태
     const [leftTab, setLeftTab] = useState('account');
 
     // 우측 탭 상태
     const [rightTab, setRightTab] = useState('reservation');
 
-    // 모달 렌더링 상태 관리 (null, 'withdraw', 'editChoice', 'vehicleEdit', 'personalEdit', 'review')
+    // 모달 렌더링 상태 관리 (null, 'withdraw', 'editChoice', 'vehicleEdit', 'personalEdit', 'review', 'resEdit')
     const [activeModal, setActiveModal] = useState(null);
 
     // 알림용 모달 상태 관리 (alert 대체용)
@@ -62,12 +66,15 @@ const MyPage = () => {
         onConfirm: null
     });
 
-    // 수리 이미지
-    const repairImageUrl = "https://images.unsplash.com/photo-1625047509168-a7026f36de04?auto=format&fit=crop&q=80&w=300";
+    /**
+     * [수정] 이미지 경로 상수화
+     * 서버의 주소와 포트를 변수로 관리하여 경로 결합 시 사용합니다.
+     */
+    const SERVER_URL = "http://localhost:8080";
 
     // 알림 모달 호출 도우미 함수
     const showAlert = (title, message, onConfirm = null) => {
-        setAlertConfig({ show: true, title, message, onConfirm });
+        setAlertConfig({show: true, title, message, onConfirm});
     };
 
     /**
@@ -96,6 +103,26 @@ const MyPage = () => {
     };
 
     /**
+     * [추가] 예약 목록 조회 함수
+     */
+    const fetchReservations = (email) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    setReservations(data);
+                } catch (e) {
+                    console.error("Reservation Parsing Error:", e);
+                }
+            }
+        };
+        xhr.open('GET', `/service/reservation/?email=${encodeURIComponent(email)}`);
+        xhr.withCredentials = true;
+        xhr.send();
+    };
+
+    /**
      * [개선] 마이페이지 사용자 정보 조회 함수화
      * 재사용이 가능하도록 useEffect 외부로 분리하였습니다.
      */
@@ -112,6 +139,8 @@ const MyPage = () => {
                 if (data.result === "success") {
                     setIsLoggedIn(true);
                     setUser(data.user);
+                    // 유저 정보 로드 성공 시 예약 목록도 함께 가져옴
+                    fetchReservations(data.user.email);
                 } else {
                     setIsLoggedIn(false);
                 }
@@ -163,6 +192,50 @@ const MyPage = () => {
         xhr.open('POST', '/mypage/update');
         xhr.withCredentials = true;
         xhr.send(fd);
+    };
+
+    /**
+     * [추가] 예약 취소 핸들러
+     */
+    const handleCancelReservation = (id) => {
+        if (!window.confirm("정말로 예약을 취소하시겠습니까?")) return;
+
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                if (data.result === "success") {
+                    showAlert("취소 완료", "예약이 정상적으로 취소되었습니다.");
+                    fetchReservations(user.email);
+                } else {
+                    showAlert("취소 실패", "이미 처리되었거나 오류가 발생했습니다.");
+                }
+            }
+        };
+        xhr.open('DELETE', `/service/reservation/${id}`);
+        xhr.withCredentials = true;
+        xhr.send();
+    };
+
+    /**
+     * [추가] 예약 수정 핸들러 (PATCH)
+     */
+    const handleUpdateReservation = () => {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                if (data.result === "success") {
+                    showAlert("수정 완료", "예약 정보가 변경되었습니다.");
+                    setActiveModal(null);
+                    fetchReservations(user.email);
+                }
+            }
+        };
+        xhr.open('PATCH', '/service/reservation/');
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.withCredentials = true;
+        xhr.send(JSON.stringify(editingReservation));
     };
 
 
@@ -271,7 +344,8 @@ const MyPage = () => {
                     </div>
 
                     {/* [수정] 프로필 이미지 클릭 시 파일 탐색기 즉시 실행 및 캐시 방지 적용 */}
-                    <div className="car-image-container" onClick={() => fileInputRef.current.click()} style={{ cursor: 'pointer' }}>
+                    <div className="car-image-container" onClick={() => fileInputRef.current.click()}
+                         style={{cursor: 'pointer'}}>
                         <img
                             src={user?.profileImage
                                 ? `${user.profileImage}?t=${new Date().getTime()}`
@@ -279,7 +353,9 @@ const MyPage = () => {
                             }
                             alt="Profile"
                             className="car-image"
-                            onError={(e) => { e.target.src = carImage; }}
+                            onError={(e) => {
+                                e.target.src = carImage;
+                            }}
                         />
                         {/* 숨겨진 파일 인풋 (실제 탐색기를 여는 역할) */}
                         <input
@@ -287,7 +363,7 @@ const MyPage = () => {
                             ref={fileInputRef}
                             onChange={handleImageClickUpload}
                             accept="image/*"
-                            style={{ display: 'none' }}
+                            style={{display: 'none'}}
                         />
                     </div>
 
@@ -384,7 +460,6 @@ const MyPage = () => {
                 </section>
 
 
-
                 {/* 우측 패널 */}
                 <section className="right-panel">
 
@@ -407,66 +482,132 @@ const MyPage = () => {
                     </div>
 
 
-
                     <div className="right-content">
 
                         {/* 예약 */}
                         {rightTab === 'reservation' && (
                             <div className="reservation-section">
 
-                                {/* 달력 */}
-                                <div className="calendar-mock">
-
-                                    {/*<div className="cal-header">*/}
-                                    {/*    <span>2월</span>*/}
-                                    {/*    <span>2026</span>*/}
-                                    {/*</div>*/}
-
-                                    {/* [수정] 하드코딩된 div들을 공통 컴포넌트로 교체 */}
+                                {/* [개선] 캘린더 영역: 데이터 유무와 상관없이 상단에 항상 표시 */}
+                                <div className="calendar-mock" style={{marginBottom: '30px'}}>
                                     <CustomCalendar
-                                        year={2026}
-                                        month={1} // 2월 (0부터 시작하므로 1)
-                                        markDay={5}
-                                        timeMark="am 10:00"
+                                        // 예약이 하나라도 있다면 첫 번째 예약 날짜를 기준으로, 없다면 오늘 날짜 기준으로 표시
+                                        year={reservations.length > 0 ? new Date(reservations[0].reservedAt).getFullYear() : new Date().getFullYear()}
+                                        month={reservations.length > 0 ? new Date(reservations[0].reservedAt).getMonth() : new Date().getMonth()}
+                                        markDay={reservations.length > 0 ? new Date(reservations[0].reservedAt).getDate() : null}
+                                        timeMark={reservations.length > 0 ? new Date(reservations[0].reservedAt).toLocaleTimeString([], {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : ""}
                                         isModal={false}
                                     />
                                 </div>
 
-
-                                {/* 예약 상세 */}
-                                <div className="reservation-detail">
-
-                                    <h4 className="shop-name">
-                                        대구 수성구 지범로 41-4 현대그린서비스
-                                    </h4>
-
-                                    <p className="shop-phone">
-                                        0507-1441-0012
-                                    </p>
-
-                                    <div className="repair-images">
-                                        <img src={repairImageUrl} alt="repair1"/>
-                                        <img src={repairImageUrl} alt="repair2"/>
+                                {/* [개선] 하단 목록 영역: 예약 데이터에 따라 메시지 또는 리스트 출력 */}
+                                {reservations.length === 0 ? (
+                                    <div className="no-reservation-info"
+                                         style={{padding: '50px 0', textAlign: 'center', borderTop: '1px solid #eee'}}>
+                                        현재 예약된 내역이 없습니다.
                                     </div>
+                                ) : (
+                                    <div className="reservation-list"
+                                         style={{borderTop: '1px solid #eee', paddingTop: '20px'}}>
+                                        {reservations.map((res) => (
+                                            <div key={res.id} className="res-item-container" style={{
+                                                marginBottom: '40px',
+                                                borderBottom: '1px solid #eee',
+                                                paddingBottom: '20px'
+                                            }}>
+                                                {/* 예약 상세 */}
+                                                <div className="reservation-detail">
+                                                    <h4 className="shop-name">{res.partnerName}</h4>
+                                                    <p className="shop-phone">상태: {res.status}</p>
 
-                                    <div className="repair-desc">
-                                        <p>수리부위 : 앞범퍼, 후드</p>
-                                        <p>수리기간 : 5일 소요</p>
-                                        <p>수리방식 : 보험 수리(피해자)</p>
+
+                                                    <div className="repair-images">
+                                                        {res.category !== '일반' && (
+                                                            <div style={{display: 'flex', gap: '10px'}}>
+                                                                {/* image1이 있을 때만 렌더링 */}
+                                                                {res.image1 && (
+                                                                    <img
+                                                                        src={`${SERVER_URL}${res.image1}`}
+                                                                        alt="repair1"
+                                                                        style={{
+                                                                            borderRadius: '4px',
+                                                                            objectFit: 'cover',
+                                                                            width: '100px',
+                                                                            height: '100px'
+                                                                        }}
+                                                                        onError={(e) => {
+                                                                            e.target.style.display = 'none';
+                                                                        }}
+                                                                    />
+                                                                )}
+
+                                                                {/* image2가 있을 때만 렌더링 */}
+                                                                {res.image2 && (
+                                                                    <img
+                                                                        src={`${SERVER_URL}${res.image2}`}
+                                                                        alt="repair2"
+                                                                        style={{
+                                                                            borderRadius: '4px',
+                                                                            objectFit: 'cover',
+                                                                            width: '100px',
+                                                                            height: '100px'
+                                                                        }}
+                                                                        onError={(e) => {
+                                                                            e.target.style.display = 'none';
+                                                                        }}
+                                                                    />
+                                                                )}
+
+                                                                {/* 사고/고장 수리인데 사진을 안 올렸을 경우만 텍스트 표시 (원치 않으시면 이 부분도 삭제 가능) */}
+                                                                {!res.image1 && !res.image2 && (
+                                                                    <p style={{fontSize: '0.8rem', color: '#ccc'}}>첨부된
+                                                                        사진이 없습니다.</p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="repair-desc">
+                                                        <p>분류 : {res.category}</p>
+
+                                                        {/*상세 항목 리스트 출력 (쉼표로 연결 및 말줄임 처리) */}
+                                                        {res.category === '일반' && (
+                                                            <p className="item-ellipsis" title={res.items?.join(', ')}>
+                                                                항목 : {res.items && res.items.length > 0
+                                                                ? res.items.join(', ')
+                                                                : "선택된 항목이 없습니다."}
+                                                            </p>
+                                                        )}
+
+                                                        <p>일시 : {new Date(res.reservedAt).toLocaleString('ko-KR')}</p>
+
+                                                        {res.category !== '일반' && (
+                                                            <p>상세 : {res.description || "내용 없음"}</p>
+                                                        )}
+
+                                                    </div>
+                                                    <div className="res-actions">
+                                                        <button onClick={() => handleCancelReservation(res.id)}>예약 취소
+                                                        </button>
+                                                        <button onClick={() => {
+                                                            setEditingReservation({...res});
+                                                            setActiveModal('resEdit');
+                                                        }}>예약 변경
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-
-                                    <div className="res-actions">
-                                        <button>예약 취소</button>
-                                        <button>예약 변경</button>
-                                    </div>
-
-                                </div>
-
+                                )}
                             </div>
                         )}
 
 
-                        {/* 히스토리 */}
+                        {/* 히스토리 (샘플 영역) */}
                         {rightTab === 'history' && (
                             <div className="history-section">
 
@@ -489,10 +630,8 @@ const MyPage = () => {
                                         0507-1441-0012
                                     </p>
 
-                                    <div className="repair-images">
-                                        <img src={repairImageUrl} alt="repair1"/>
-                                        <img src={repairImageUrl} alt="repair2"/>
-                                    </div>
+                                    {/* [수정] 히스토리 영역에서도 디폴트 더미 이미지 삭제 */}
+
 
                                     <div className="repair-desc">
                                         <p>수리부위 : 앞범퍼, 후드</p>
@@ -543,7 +682,7 @@ const MyPage = () => {
             )}
 
             {/* 4. 개인정보 수정 모달 [개선]
-                이미지 변경 후 즉시 반영을 위해 onSuccess 콜백 추가
+                이미지 변경 후 즉시 반영을 위해 onSuccess 콜측 추가
             */}
             {activeModal === 'personalEdit' && (
                 <PersonalInfoEditModal
@@ -562,14 +701,81 @@ const MyPage = () => {
                 />
             )}
 
-            {/* 6. 커스텀 알림 모달 */}
+            {/* 6. 예약 수정 모달 [추가] */}
+            {activeModal === 'resEdit' && editingReservation && (
+                <div className="modal-overlay" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 1000
+                }}>
+                    <div className="modal-content"
+                         style={{background: '#fff', padding: '30px', borderRadius: '10px', width: '400px'}}>
+                        <h2 style={{marginBottom: '20px', fontSize: '1.2rem', fontWeight: 'bold'}}>예약 변경</h2>
+                        <div style={{marginBottom: '15px'}}>
+                            <label style={{display: 'block', marginBottom: '5px', fontSize: '0.9rem'}}>방문 일시</label>
+                            <input
+                                type="datetime-local"
+                                style={{width: '100%', padding: '10px', border: '1px solid #ddd'}}
+                                value={editingReservation.reservedAt.substring(0, 16)}
+                                onChange={(e) => setEditingReservation({
+                                    ...editingReservation,
+                                    reservedAt: e.target.value
+                                })}
+                            />
+                        </div>
+                        <div style={{marginBottom: '20px'}}>
+                            <label style={{display: 'block', marginBottom: '5px', fontSize: '0.9rem'}}>상세 요청사항</label>
+                            <textarea
+                                style={{
+                                    width: '100%',
+                                    height: '100px',
+                                    padding: '10px',
+                                    border: '1px solid #ddd',
+                                    resize: 'none'
+                                }}
+                                value={editingReservation.description}
+                                onChange={(e) => setEditingReservation({
+                                    ...editingReservation,
+                                    description: e.target.value
+                                })}
+                            />
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'flex-end', gap: '10px'}}>
+                            <button onClick={handleUpdateReservation} style={{
+                                padding: '10px 20px',
+                                background: '#000',
+                                color: '#fff',
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}>변경 저장
+                            </button>
+                            <button onClick={() => setActiveModal(null)} style={{
+                                padding: '10px 20px',
+                                background: '#eee',
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}>취소
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 7. 커스텀 알림 모달 */}
             {alertConfig.show && (
                 <AuthAlertModal
                     title={alertConfig.title}
                     message={alertConfig.message}
                     onClose={() => {
                         if (alertConfig.onConfirm) alertConfig.onConfirm();
-                        setAlertConfig({ ...alertConfig, show: false });
+                        setAlertConfig({...alertConfig, show: false});
                     }}
                 />
             )}

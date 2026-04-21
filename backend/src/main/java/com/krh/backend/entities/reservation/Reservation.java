@@ -3,6 +3,7 @@ package com.krh.backend.entities.reservation;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,4 +21,7 @@ public class Reservation {
     private LocalDateTime reservedAt; // 사용자가 선택한 실제 예약 일시
     private String status;        // 예약 상태 (PENDING, CONFIRMED, COMPLETED, CANCELED)
     private LocalDateTime createdAt;  // 예약 신청 시간 (기본 NOW())
+    private String image1; // 추가
+    private String image2; // 추가
+    private List<String> items;
 }

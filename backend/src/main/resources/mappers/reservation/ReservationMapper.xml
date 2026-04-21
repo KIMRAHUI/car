@@ -7,9 +7,23 @@
             keyProperty="id"
             parameterType="com.krh.backend.entities.reservation.Reservation">
         INSERT INTO `car`.`reservations` (
-            `user_email`, `partner_id`, `partner_name`, `category`, `description`, `reserved_at`
+            `user_email`,
+            `partner_id`,
+            `partner_name`,
+            `category`,
+            `description`,
+            `image_1`,
+            `image_2`,
+            `reserved_at`
         ) VALUES (
-                     #{userEmail}, #{partnerId}, #{partnerName}, #{category}, #{description}, #{reservedAt}
+                     #{userEmail},
+                     #{partnerId},
+                     #{partnerName},
+                     #{category},
+                     #{description},
+                     #{image1},
+                     #{image2},
+                     #{reservedAt}
                  )
     </insert>
 
@@ -30,6 +44,8 @@
                `partner_name` AS `partnerName`,
                `category`,
                `description`,
+               `image_1`      AS `image1`,
+               `image_2`      AS `image2`,
                `reserved_at`  AS `reservedAt`,
                `status`,
                `created_at`   AS `createdAt`
