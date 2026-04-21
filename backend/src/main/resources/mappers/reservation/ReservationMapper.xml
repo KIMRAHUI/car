@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.krh.backend.mappers.reservation.ReservationMapper">
+
+    <insert id="insertReservation"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            parameterType="com.krh.backend.entities.reservation.Reservation">
+        INSERT INTO `car`.`reservations` (
+            `user_email`, `partner_id`, `partner_name`, `category`, `description`, `reserved_at`
+        ) VALUES (
+                     #{userEmail}, #{partnerId}, #{partnerName}, #{category}, #{description}, #{reservedAt}
+                 )
+    </insert>
+
+    <insert id="insertReservationItem"
+            parameterType="com.krh.backend.entities.reservation.ReservationItem">
+        INSERT INTO `car`.`reservation_items` (
+            `reservation_id`, `item_name`
+        ) VALUES (
+                     #{reservationId}, #{itemName}
+                 )
+    </insert>
+
+    <select id="selectReservationsByUserEmail"
+            resultType="com.krh.backend.entities.reservation.Reservation">
+        SELECT `id`,
+               `user_email`   AS `userEmail`,
+               `partner_id`   AS `partnerId`,
+               `partner_name` AS `partnerName`,
+               `category`,
+               `description`,
+               `reserved_at`  AS `reservedAt`,
+               `status`,
+               `created_at`   AS `createdAt`
+        FROM `car`.`reservations`
+        WHERE `user_email` = #{userEmail}
+        ORDER BY `reserved_at` DESC
+    </select>
+
+    <select id="selectItemsByReservationId"
+            resultType="com.krh.backend.entities.reservation.ReservationItem">
+        SELECT `id`,
+               `reservation_id` AS `reservationId`,
+               `item_name`      AS `itemName`
+        FROM `car`.`reservation_items`
+        WHERE `reservation_id` = #{reservationId}
+    </select>
+
+    <update id="updateReservation"
+            parameterType="com.krh.backend.entities.reservation.Reservation">
+        UPDATE `car`.`reservations`
+        SET `reserved_at` = #{reservedAt},
+            `description` = #{description},
+            `status`      = #{status}
+        WHERE `id` = #{id}
+    </update>
+
+    <delete id="deleteReservationById">
+        DELETE
+        FROM `car`.`reservations`
+        WHERE `id` = #{id}
+    </delete>
+
+    <delete id="deleteItemsByReservationId">
+        DELETE
+        FROM `car`.`reservation_items`
+        WHERE `reservation_id` = #{reservationId}
+    </delete>
+
+</mapper>

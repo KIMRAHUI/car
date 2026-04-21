@@ -228,3 +228,13 @@
     margin-bottom: 1.25rem;
     text-align: left;
 }
+/* 알럿 모달의 오버레이가 예약 모달보다 높아야 합니다. */
+.auth-alert-overlay,
+.modal-overlay { /* AuthAlertModal에서 사용하는 오버레이 클래스명 확인 */
+    z-index: 9999 !important; /* 예약 모달의 z-index보다 무조건 높게 설정 */
+}
+
+/* 예약 모달의 z-index는 알럿보다 낮게 설정되어 있는지 확인 */
+.res-modal-overlay {
+    z-index: 1000;
+}

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './ReservationModal.css';
 import CustomCalendar from '../common/CustomCalendar'; // 공통 컴포넌트 경로에 맞춰 임포트
+import AuthAlertModal from '../../components/auth/AuthAlertModal.jsx'; // 공통 알럿 모달 임포트
 
 // 이미지 자산 경로 유지
 import wrenchIcon from '../../assets/image/modal/Wrench.png';
@@ -148,7 +150,28 @@ const CarSVGSelector = ({ selectedParts, onPartClick }) => {
     );
 };
 
-const ReservationModal = ({ partner, onClose }) => {
+const ReservationModal = ({ partner, onClose, userEmail }) => {
+    // 공통 알럿 상태 설정
+    const [alertConfig, setAlertConfig] = useState({
+        show: false,
+        title: '',
+        message: '',
+        onConfirm: null
+    });
+
+    const showAlert = (title, message, onConfirm = null) => {
+        setAlertConfig({ show: true, title, message, onConfirm });
+    };
+
+    // 오늘 날짜를 yyyy-mm-dd 형식으로 추출하는 헬퍼 함수
+    const getTodayString = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const reviews = [
         { id: 1, user: "카밋매니아", rating: 5, content: "도색 퀄리티가 미쳤습니다. 수입차 전문이라 그런지 이질감이 전혀 없네요!", date: "2026.03.15" },
         { id: 2, user: "안전운전해용", rating: 4, content: "상담도 친절하시고 예약 시간 딱 맞춰서 작업해주셔서 좋았습니다.", date: "2026.03.10" }
@@ -204,7 +227,13 @@ const ReservationModal = ({ partner, onClose }) => {
     const [selectedGeneralItems, setSelectedGeneralItems] = useState([]);
     const [selectedParts, setSelectedParts] = useState([]);
     const [accidentDesc, setAccidentDesc] = useState('');
-    const [selectedDate, setSelectedDate] = useState('2026-04-21');
+
+    // 추가된 상태: 고장 수리용
+    const [repairType, setRepairType] = useState('엔진/출력 저하');
+    const [repairDesc, setRepairDesc] = useState('');
+
+    // 초기 날짜를 오늘 날짜로 자동 설정
+    const [selectedDate, setSelectedDate] = useState(getTodayString());
     const [selectedTime, setSelectedTime] = useState('11:30 AM');
 
     const toggleGeneralItem = (item) => {
@@ -217,6 +246,40 @@ const ReservationModal = ({ partner, onClose }) => {
         setSelectedParts(prev =>
             prev.includes(partName) ? prev.filter(p => p !== partName) : [...prev, partName]
         );
+    };
+
+    // 서버 전송 핸들러
+    const handleSubmit = async () => {
+        const reservationData = {
+            userEmail: userEmail || 'rah610670@gmail.com', // 세션 이메일 없을 시 기본값
+            partnerId: partner.id,
+            partnerName: partner.place_name,
+            category: category,
+            // 카테고리별 items 조립
+            items: category === '일반' ? selectedGeneralItems : (category === '사고' ? selectedParts : [repairType]),
+            // 카테고리별 description 조립
+            description: category === '사고' ? accidentDesc : (category === '고장' ? repairDesc : ''),
+            selectedDate: selectedDate,
+            selectedTime: selectedTime
+        };
+
+        try {
+            const response = await axios.post('/service/reservation/', reservationData);
+
+            // [수정] 백엔드 응답값 'failure' 체크 및 showAlert 실행
+            if (response.data.result === 'success') {
+                setStep(5);
+            } else if (response.data.result === 'failure') {
+                // AI 필터링에 걸렸을 때 우리 스타일의 알럿을 띄웁니다.
+                showAlert(
+                    "예약 불가",
+                    "입력하신 내용에 부적절한 표현(비속어/광고)이 포함되어 있습니다. 내용을 다시 확인해 주세요."
+                );
+            }
+        } catch (error) {
+            console.error("Reservation Submit Error:", error);
+            showAlert("통신 오류", "서버와의 연결이 원활하지 않습니다.");
+        }
     };
 
     const dynamicContent = isBrand ? {
@@ -238,195 +301,218 @@ const ReservationModal = ({ partner, onClose }) => {
     };
 
     return (
-        <div className="res-modal-overlay" onClick={onClose}>
-            <div className="res-modal-content" onClick={(e) => e.stopPropagation()}>
-                <header className="res-header">
-                    <h2>점검 및 수리 예약</h2>
-                    <button className="close-x" onClick={onClose}>✕</button>
-                </header>
+        <>
+            <div className="res-modal-overlay" onClick={onClose}>
+                <div className="res-modal-content" onClick={(e) => e.stopPropagation()}>
+                    <header className="res-header">
+                        <h2>점검 및 수리 예약</h2>
+                        <button className="close-x" onClick={onClose}>✕</button>
+                    </header>
 
-                <div className="res-body">
-                    {step === 1 && (
-                        <div className="step-container step-1">
-                            <div className="partner-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                <h3 style={{ margin: 0 }}>{partner.place_name}</h3>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                        <span className="rating-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1A1A1A' }}>
-                                            ★ {finalRating}
-                                        </span>
-                                        <span style={{ cursor: 'help', fontSize: '0.8rem', color: '#ccc' }} title="포털 리뷰 지수 및 플랫폼 데이터를 종합한 Carmit 전용 평점입니다.">ⓘ</span>
+                    <div className="res-body">
+                        {step === 1 && (
+                            <div className="step-container step-1">
+                                <div className="partner-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                    <h3 style={{ margin: 0 }}>{partner.place_name}</h3>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                            <span className="rating-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1A1A1A' }}>
+                                                ★ {finalRating}
+                                            </span>
+                                            <span style={{ cursor: 'help', fontSize: '0.8rem', color: '#ccc' }} title="포털 리뷰 지수 및 플랫폼 데이터를 종합한 Carmit 전용 평점입니다.">ⓘ</span>
+                                        </div>
+                                        <div style={{ fontSize: '0.65rem', color: '#888', fontWeight: '500' }}>Carmmit 통합 신뢰 지수</div>
                                     </div>
-                                    <div style={{ fontSize: '0.65rem', color: '#888', fontWeight: '500' }}>Carmmit 통합 신뢰 지수</div>
+                                </div>
+
+                                <div style={{
+                                    width: '100%',
+                                    height: '180px',
+                                    backgroundColor: '#f2f2f2',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    margin: '10px 0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <img
+                                        src={theme.banner}
+                                        alt="partner banner"
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'contain',
+                                            padding: '10px'
+                                        }}
+                                    />
+                                </div>
+                                <div className="location-text" style={{fontSize: '0.8rem', color: '#666', marginBottom: '10px'}}>{partner.address_name}</div>
+                                <div className="tab-menu">
+                                    <button className={tab === 'intro' ? 'active' : ''} onClick={() => setTab('intro')}>업체소개</button>
+                                    <button className={tab === 'review' ? 'active' : ''} onClick={() => setTab('review')}>후기({reviews.length})</button>
+                                </div>
+                                <div className="tab-content">
+                                    {tab === 'intro' ? (
+                                        <div className="intro-content">
+                                            <p>{dynamicContent.slogan}</p>
+                                            <p>✨ <strong>{partner.place_name}</strong>만의 차별화 서비스</p>
+                                            <ul style={{listStyle:'none', padding:0, fontSize:'0.85rem'}}>
+                                                {dynamicContent.features.map((feature, idx) => (
+                                                    <li key={idx} style={{marginBottom:'4px'}}>{feature}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ) : (
+                                        <div className="review-list">
+                                            {reviews.map(r => (
+                                                <div key={r.id} className="review-item" style={{borderBottom:'1px solid #eee', padding:'10px 0'}}>
+                                                    <div className="review-top"><strong>{r.user}</strong> <span style={{color:'#f39c12'}}>⭐{r.rating}</span></div>
+                                                    <p style={{fontSize:'0.8rem', margin:'5px 0'}}>{r.content}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <button className="next-btn-black" onClick={() => setStep(2)}>정비 예약하기</button>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="step-container step-2">
+                                <h3 style={{marginBottom:'40px'}}>카테고리를 선택해주세요</h3>
+                                <div className="cat-list">
+                                    <button className="cat-btn" onClick={() => {setCategory('일반'); setStep(3);}}>
+                                        <img src={wrenchIcon} alt="w" /> 일반 점검 및 소모품 교체
+                                    </button>
+                                    <button className="cat-btn" onClick={() => {setCategory('고장'); setStep(3);}}>
+                                        <img src={fixIcon} alt="f" /> 고장 수리
+                                    </button>
+                                    <button className="cat-btn" onClick={() => {setCategory('사고'); setStep(3);}}>
+                                        <img src={crashIcon} alt="c" /> 사고 수리
+                                    </button>
                                 </div>
                             </div>
+                        )}
 
-                            <div style={{
-                                width: '100%',
-                                height: '180px',
-                                backgroundColor: '#f2f2f2',
-                                borderRadius: '8px',
-                                overflow: 'hidden',
-                                margin: '10px 0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <img
-                                    src={theme.banner}
-                                    alt="partner banner"
-                                    style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'contain',
-                                        padding: '10px'
-                                    }}
-                                />
-                            </div>
-                            <div className="location-text" style={{fontSize: '0.8rem', color: '#666', marginBottom: '10px'}}>{partner.address_name}</div>
-                            <div className="tab-menu">
-                                <button className={tab === 'intro' ? 'active' : ''} onClick={() => setTab('intro')}>업체소개</button>
-                                <button className={tab === 'review' ? 'active' : ''} onClick={() => setTab('review')}>후기({reviews.length})</button>
-                            </div>
-                            <div className="tab-content">
-                                {tab === 'intro' ? (
-                                    <div className="intro-content">
-                                        <p>{dynamicContent.slogan}</p>
-                                        <p>✨ <strong>{partner.place_name}</strong>만의 차별화 서비스</p>
-                                        <ul style={{listStyle:'none', padding:0, fontSize:'0.85rem'}}>
-                                            {dynamicContent.features.map((feature, idx) => (
-                                                <li key={idx} style={{marginBottom:'4px'}}>{feature}</li>
+                        {step === 3 && (
+                            <div className="step-container step-3">
+                                {category === '일반' && (
+                                    <div className="general-select">
+                                        <h3 style={{fontSize:'1rem'}}>교체 또는 점검이 필요한 항목을<br/>모두 선택해 주세요.</h3>
+                                        <div className="check-group" style={{textAlign:'left', overflowY:'auto', maxHeight:'300px'}}>
+                                            <p style={{fontWeight:800, margin:'15px 0 10px'}}>오일 및 케미컬</p>
+                                            {['엔진오일 및 필터 세트', '브레이크 오일', '미션 오일', '냉각수 보충'].map(item => (
+                                                <label key={item} style={{display:'block', marginBottom:'8px', cursor: 'pointer'}}>
+                                                    <input type="checkbox" checked={selectedGeneralItems.includes(item)} onChange={() => toggleGeneralItem(item)} /> {item}
+                                                </label>
                                             ))}
-                                        </ul>
+                                            <p style={{fontWeight:800, margin:'20px 0 10px'}}>필터 및 일반 소모품</p>
+                                            {['에어컨/히터 필터', '와이퍼 블레이드 세트', '스마트키 배터리 교환'].map(item => (
+                                                <label key={item} style={{display:'block', marginBottom:'8px', cursor: 'pointer'}}>
+                                                    <input type="checkbox" checked={selectedGeneralItems.includes(item)} onChange={() => toggleGeneralItem(item)} /> {item}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <button className="next-btn-gray" onClick={() => setStep(4)}>예약 하기</button>
                                     </div>
-                                ) : (
-                                    <div className="review-list">
-                                        {reviews.map(r => (
-                                            <div key={r.id} className="review-item" style={{borderBottom:'1px solid #eee', padding:'10px 0'}}>
-                                                <div className="review-top"><strong>{r.user}</strong> <span style={{color:'#f39c12'}}>⭐{r.rating}</span></div>
-                                                <p style={{fontSize:'0.8rem', margin:'5px 0'}}>{r.content}</p>
-                                            </div>
-                                        ))}
+                                )}
+
+                                {category === '사고' && (
+                                    <div className="accident-select">
+                                        <h3 style={{fontSize:'1rem'}}>파손 부위를 선택해주세요</h3>
+                                        <div className="car-svg-area" style={{ background: '#f9f9f9', borderRadius: '8px', marginBottom: '10px', padding: '15px' }}>
+                                            <CarSVGSelector selectedParts={selectedParts} onPartClick={togglePart} />
+                                        </div>
+                                        <div className="tag-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '30px' }}>
+                                            {selectedParts.map(p => <span key={p} className="tag" style={{marginRight: '5px'}}>#{p}</span>)}
+                                        </div>
+                                        <textarea
+                                            placeholder="사고 경위를 입력해주세요. (예: 주차장 기둥에 긁힘)"
+                                            className="desc-area"
+                                            style={{width:'100%', height:'80px', marginTop:'10px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}
+                                            value={accidentDesc}
+                                            onChange={(e) => setAccidentDesc(e.target.value)}
+                                        ></textarea>
+                                        <button className="next-btn-gray" onClick={() => setStep(4)}>다음</button>
+                                    </div>
+                                )}
+
+                                {category === '고장' && (
+                                    <div className="fix-input">
+                                        <h3 style={{fontSize:'1rem'}}>어떤 불편함이 있으신가요?</h3>
+                                        <select
+                                            value={repairType}
+                                            onChange={(e) => setRepairType(e.target.value)}
+                                            style={{width:'100%', padding:'10px', marginBottom:'15px', border: '1px solid #ddd'}}
+                                        >
+                                            <option>엔진/출력 저하</option>
+                                            <option>소음/진동 발생</option>
+                                            <option>경고등 점등</option>
+                                        </select>
+                                        <textarea
+                                            placeholder="상세 증상을 입력해주세요."
+                                            value={repairDesc}
+                                            onChange={(e) => setRepairDesc(e.target.value)}
+                                            style={{width:'100%', height:'120px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}
+                                        ></textarea>
+                                        <button className="next-btn-gray" onClick={() => setStep(4)}>예약 하기</button>
                                     </div>
                                 )}
                             </div>
-                            <button className="next-btn-black" onClick={() => setStep(2)}>정비 예약하기</button>
-                        </div>
-                    )}
+                        )}
 
-                    {step === 2 && (
-                        <div className="step-container step-2">
-                            <h3 style={{marginBottom:'40px'}}>카테고리를 선택해주세요</h3>
-                            <div className="cat-list">
-                                <button className="cat-btn" onClick={() => {setCategory('일반'); setStep(3);}}>
-                                    <img src={wrenchIcon} alt="w" /> 일반 점검 및 소모품 교체
-                                </button>
-                                <button className="cat-btn" onClick={() => {setCategory('고장'); setStep(3);}}>
-                                    <img src={fixIcon} alt="f" /> 고장 수리
-                                </button>
-                                <button className="cat-btn" onClick={() => {setCategory('사고'); setStep(3);}}>
-                                    <img src={crashIcon} alt="c" /> 사고 수리
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 3 && (
-                        <div className="step-container step-3">
-                            {category === '일반' && (
-                                <div className="general-select">
-                                    <h3 style={{fontSize:'1rem'}}>교체 또는 점검이 필요한 항목을<br/>모두 선택해 주세요.</h3>
-                                    <div className="check-group" style={{textAlign:'left', overflowY:'auto', maxHeight:'300px'}}>
-                                        <p style={{fontWeight:800, margin:'15px 0 10px'}}>오일 및 케미컬</p>
-                                        {['엔진오일 및 필터 세트', '브레이크 오일', '미션 오일', '냉각수 보충'].map(item => (
-                                            <label key={item} style={{display:'block', marginBottom:'8px', cursor: 'pointer'}}>
-                                                <input type="checkbox" checked={selectedGeneralItems.includes(item)} onChange={() => toggleGeneralItem(item)} /> {item}
-                                            </label>
-                                        ))}
-                                        <p style={{fontWeight:800, margin:'20px 0 10px'}}>필터 및 일반 소모품</p>
-                                        {['에어컨/히터 필터', '와이퍼 블레이드 세트', '스마트키 배터리 교환'].map(item => (
-                                            <label key={item} style={{display:'block', marginBottom:'8px', cursor: 'pointer'}}>
-                                                <input type="checkbox" checked={selectedGeneralItems.includes(item)} onChange={() => toggleGeneralItem(item)} /> {item}
-                                            </label>
-                                        ))}
-                                    </div>
-                                    <button className="next-btn-gray" onClick={() => setStep(4)}>예약 하기</button>
+                        {step === 4 && (
+                            <div className="step-container step-4">
+                                <CustomCalendar
+                                    year={2026}
+                                    month={3} // 0부터 시작하므로 3은 4월
+                                    selectedDate={selectedDate}
+                                    onDateClick={(date) => setSelectedDate(date)}
+                                    isModal={true}
+                                />
+                                <p style={{fontSize:'0.8rem', fontWeight:800, textAlign:'left', marginBottom: '10px', marginTop: '20px'}}>TIME</p>
+                                <div className="time-grid">
+                                    {['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:30 PM'].map(t => (
+                                        <button key={t} className={selectedTime === t ? 'active' : ''} onClick={() => setSelectedTime(t)}>{t}</button>
+                                    ))}
                                 </div>
-                            )}
-
-                            {category === '사고' && (
-                                <div className="accident-select">
-                                    <h3 style={{fontSize:'1rem'}}>파손 부위를 선택해주세요</h3>
-                                    <div className="car-svg-area" style={{ background: '#f9f9f9', borderRadius: '8px', marginBottom: '10px', padding: '15px' }}>
-                                        <CarSVGSelector selectedParts={selectedParts} onPartClick={togglePart} />
-                                    </div>
-                                    <div className="tag-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '30px' }}>
-                                        {selectedParts.map(p => <span key={p} className="tag" style={{marginRight: '5px'}}>#{p}</span>)}
-                                    </div>
-                                    <textarea
-                                        placeholder="사고 경위를 입력해주세요. (예: 주차장 기둥에 긁힘)"
-                                        className="desc-area"
-                                        style={{width:'100%', height:'80px', marginTop:'10px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}
-                                        value={accidentDesc}
-                                        onChange={(e) => setAccidentDesc(e.target.value)}
-                                    ></textarea>
-                                    <button className="next-btn-gray" onClick={() => setStep(4)}>다음</button>
-                                </div>
-                            )}
-
-                            {category === '고장' && (
-                                <div className="fix-input">
-                                    <h3 style={{fontSize:'1rem'}}>어떤 불편함이 있으신가요?</h3>
-                                    <select style={{width:'100%', padding:'10px', marginBottom:'15px', border: '1px solid #ddd'}}>
-                                        <option>엔진/출력 저하</option>
-                                        <option>소음/진동 발생</option>
-                                        <option>경고등 점등</option>
-                                    </select>
-                                    <textarea placeholder="상세 증상을 입력해주세요." style={{width:'100%', height:'120px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}></textarea>
-                                    <button className="next-btn-gray" onClick={() => setStep(4)}>예약 하기</button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {step === 4 && (
-                        <div className="step-container step-4">
-                            {/*<h3 style={{fontSize:'1.2rem', marginBottom:'10px'}}>4월 2026</h3>*/}
-                            <CustomCalendar
-                                year={2026}
-                                month={3} // 0부터 시작하므로 3은 4월
-                                selectedDate={selectedDate}
-                                onDateClick={(date) => setSelectedDate(date)}
-                                isModal={true}
-                            />
-                            <p style={{fontSize:'0.8rem', fontWeight:800, textAlign:'left', marginBottom: '10px', marginTop: '20px'}}>TIME</p>
-                            <div className="time-grid">
-                                {['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:30 PM'].map(t => (
-                                    <button key={t} className={selectedTime === t ? 'active' : ''} onClick={() => setSelectedTime(t)}>{t}</button>
-                                ))}
+                                <button className="next-btn-black" onClick={handleSubmit}>예약 완료하기</button>
                             </div>
-                            <button className="next-btn-black" onClick={() => setStep(5)}>다음</button>
-                        </div>
-                    )}
+                        )}
 
-                    {step === 5 && (
-                        <div className="step-container step-5" style={{paddingTop:0}}>
-                            <img src={completeImage} alt="complete" style={{width:'100%', marginBottom:'20px'}} />
-                            <h2 style={{fontSize:'1.1rem', marginBottom: '10px'}}>{selectedDate} am {selectedTime} 예약 완료되었습니다.</h2>
-                            <p className="guide-msg" style={{fontSize: '0.75rem', color: '#666', marginBottom: '20px', lineHeight: '1.5'}}>
-                                "*간혹 매장 사정에 따라 실시간 영업 상태가 반영되지 않을 수 있습니다.<br/>
-                                원활한 점검을 위해 예약 시간 전 업체에서 드리는 확인 연락을 꼭 받아주세요."
-                            </p>
-                            <div className="final-info" style={{textAlign:'left', background: '#f5f5f5', padding: '15px', borderRadius: '4px'}}>
-                                <p style={{margin:'0 0 5px 0'}}><strong>{partner.address_name} {partner.place_name}</strong></p>
-                                <p style={{margin:'0', fontSize:'0.8rem', color: '#555'}}>{partner.phone || "0507-0000-0000"}</p>
+                        {step === 5 && (
+                            <div className="step-container step-5" style={{paddingTop:0}}>
+                                <img src={completeImage} alt="complete" style={{width:'100%', marginBottom:'20px'}} />
+                                <h2 style={{fontSize:'1.1rem', marginBottom: '10px'}}>{selectedDate} am {selectedTime} 예약 완료되었습니다.</h2>
+                                <p className="guide-msg" style={{fontSize: '0.75rem', color: '#666', marginBottom: '20px', lineHeight: '1.5'}}>
+                                    "*간혹 매장 사정에 따라 실시간 영업 상태가 반영되지 않을 수 있습니다.<br/>
+                                    원활한 점검을 위해 예약 시간 전 업체에서 드리는 확인 연락을 꼭 받아주세요."
+                                </p>
+                                <div className="final-info" style={{textAlign:'left', background: '#f5f5f5', padding: '15px', borderRadius: '4px'}}>
+                                    <p style={{margin:'0 0 5px 0'}}><strong>{partner.address_name} {partner.place_name}</strong></p>
+                                    <p style={{margin:'0', fontSize:'0.8rem', color: '#555'}}>{partner.phone || "0507-0000-0000"}</p>
+                                </div>
+                                <button className="next-btn-gray" onClick={onClose} style={{marginTop: '20px'}}>확인</button>
                             </div>
-                            <button className="next-btn-gray" onClick={onClose} style={{marginTop: '20px'}}>확인</button>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+
+            {/* [추가] 공통 스타일 알럿 모달 배치: 이 코드가 있어야 showAlert가 작동합니다. */}
+            {alertConfig.show && (
+                <AuthAlertModal
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    onClose={() => {
+                        const confirmAction = alertConfig.onConfirm;
+                        setAlertConfig(prev => ({ ...prev, show: false }));
+                        if (confirmAction) confirmAction();
+                    }}
+                />
+            )}
+        </>
     );
 };
 
