@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './ReservationModal.css';
+import CustomCalendar from '../common/CustomCalendar'; // 공통 컴포넌트 경로에 맞춰 임포트
 
 // 이미지 자산 경로 유지
 import wrenchIcon from '../../assets/image/modal/Wrench.png';
@@ -26,10 +27,8 @@ import imgDefault from '../../assets/image/modal/stroeImgae/default.jpg';
 
 /**
  * 내부 컴포넌트: 차량 일러스트 선택기
- * 사용자가 표시한 동그라미 영역에 맞춰 사이드미러 및 세부 부위 좌표를 정밀 매칭
  */
 const CarSVGSelector = ({ selectedParts, onPartClick }) => {
-    // [정밀 재집도] 각 이미지 내 실제 부위의 % 위치 좌표 (사용자 가이드 반영)
     const views = [
         {
             title: '후면',
@@ -40,8 +39,8 @@ const CarSVGSelector = ({ selectedParts, onPartClick }) => {
                 { name: '뒷 범퍼', x: 50, y: 75 },
                 { name: '후미등(좌)', x: 18, y: 55 },
                 { name: '후미등(우)', x: 82, y: 55 },
-                { name: '사이드미러(뒤좌)', x: 12, y: 35 }, // 후면 기준 왼쪽 미러
-                { name: '사이드미러(뒤우)', x: 88, y: 35 }  // 후면 기준 오른쪽 미러
+                { name: '사이드미러(뒤좌)', x: 12, y: 35 },
+                { name: '사이드미러(뒤우)', x: 88, y: 35 }
             ]
         },
         {
@@ -75,8 +74,8 @@ const CarSVGSelector = ({ selectedParts, onPartClick }) => {
                 { name: '본네트(정면)', x: 50, y: 45 },
                 { name: '앞 범퍼', x: 50, y: 60 },
                 { name: '앞유리(정면)', x: 50, y: 30 },
-                { name: '사이드미러(좌)', x: 12, y: 35 }, // 정면 동그라미 영역 반영
-                { name: '사이드미러(우)', x: 88, y: 35 }, // 정면 동그라미 영역 반영
+                { name: '사이드미러(좌)', x: 12, y: 35 },
+                { name: '사이드미러(우)', x: 88, y: 35 },
                 { name: '전조등(좌)', x: 25, y: 58 },
                 { name: '전조등(우)', x: 75, y: 58 },
                 { name: '앞 휀다(좌)', x: 15, y: 55 },
@@ -150,46 +149,21 @@ const CarSVGSelector = ({ selectedParts, onPartClick }) => {
 };
 
 const ReservationModal = ({ partner, onClose }) => {
-    // 플랫폼 내부 후기 더미 데이터
     const reviews = [
         { id: 1, user: "카밋매니아", rating: 5, content: "도색 퀄리티가 미쳤습니다. 수입차 전문이라 그런지 이질감이 전혀 없네요!", date: "2026.03.15" },
         { id: 2, user: "안전운전해용", rating: 4, content: "상담도 친절하시고 예약 시간 딱 맞춰서 작업해주셔서 좋았습니다.", date: "2026.03.10" }
     ];
 
-    /**
-     * [평점 산출 알고리즘 및 데이터 무결성 가이드]
-     * * 1. 현재 상황 및 제약 사항:
-     * - Kakao/Naver 공식 API는 보안 정책 및 데이터 자산 보호를 위해 업체별 '실시간 별점' 데이터를 제공하지 않음.
-     * - 웹 크롤링(Scraping)은 해당 서비스의 이용약관 위반, IP 차단 리스크, 그리고 법적 분쟁(영업권 침해)의 소지가 있어 지양함.
-     * * 2. 해결 방안 (Pseudo-Deterministic Rating):
-     * - 업체 고유 식별자(partner.id)를 시드(Seed)로 활용한 결정론적 점수 생성 알고리즘 적용.
-     * - 이는 단순 랜덤과 달리 동일 업체에 대해 항상 일관된 점수를 유지하여 사용자 신뢰도를 확보함.
-     * * 3. 가중치 산정 (Hybrid Scoring):
-     * - 외부 지표 보정값(70%) : 업체 ID 기반 해시 점수 (4.0 ~ 4.8 분포)
-     * - 플랫폼 내부 지표(30%) : Carmit 플랫폼 내 실제 사용자 후기 평점 평균
-     * * 4. 향후 확장성 (Scalability):
-     * - 추후 제휴를 통한 공식 데이터 확보 또는 자체 DB 구축 시, 'externalRating' 변수에
-     * 실제 API 응답값만 매핑하면 전체 로직 수정 없이 즉시 실데이터 전환 가능.
-     */
     const calculateTotalRating = () => {
-        // 1. 외부 평점 대용 보정 로직 (ID 기반 고정값 생성)
-        const idBase = parseInt(partner.id?.slice(-3) || '123') % 9; // ID 끝 3자리 활용 (0~8)
-        const externalRating = 4.0 + (idBase * 0.1); // 4.0 ~ 4.8 사이의 고유 점수 발생
-
-        // 2. 플랫폼 내부 평점 계산
+        const idBase = parseInt(partner.id?.slice(-3) || '123') % 9;
+        const externalRating = 4.0 + (idBase * 0.1);
         const internalRating = reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviews.length;
-
-        // 3. 7:3 비율 합산 및 반올림
         const total = (externalRating * 0.7) + (internalRating * 0.3);
         return total.toFixed(1);
     };
 
     const finalRating = calculateTotalRating();
 
-    /**
-     * [배너 이미지 매칭 - 8080 포트 호환성]
-     * Vite(5173)와 SpringBoot(8080) 서빙 환경 차이를 극복하기 위해 import된 객체를 직접 매칭
-     */
     const getPartnerTheme = () => {
         const name = partner.place_name;
         let selectedBanner = imgDefault;
@@ -417,24 +391,15 @@ const ReservationModal = ({ partner, onClose }) => {
 
                     {step === 4 && (
                         <div className="step-container step-4">
-                            <h3 style={{fontSize:'1.2rem', marginBottom:'10px'}}>4월 2026</h3>
-                            <div className="calendar-grid" style={{fontSize:'0.75rem', display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:'8px', marginBottom:'20px', textAlign: 'center'}}>
-                                {['S','M','T','W','T','F','S'].map(d => <div key={d} style={{fontWeight:800, color: '#999'}}>{d}</div>)}
-                                {Array.from({length: 30}, (_, i) => i + 1).map(day => (
-                                    <div key={day}
-                                         className={day === 21 ? 'active-day' : ''}
-                                         style={{
-                                             padding:'8px',
-                                             cursor:'pointer',
-                                             borderRadius: '4px',
-                                             background: day === 21 ? '#1A1A1A' : 'transparent',
-                                             color: day === 21 ? '#FFF' : '#000'
-                                         }}>
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-                            <p style={{fontSize:'0.8rem', fontWeight:800, textAlign:'left', marginBottom: '10px'}}>TIME</p>
+                            {/*<h3 style={{fontSize:'1.2rem', marginBottom:'10px'}}>4월 2026</h3>*/}
+                            <CustomCalendar
+                                year={2026}
+                                month={3} // 0부터 시작하므로 3은 4월
+                                selectedDate={selectedDate}
+                                onDateClick={(date) => setSelectedDate(date)}
+                                isModal={true}
+                            />
+                            <p style={{fontSize:'0.8rem', fontWeight:800, textAlign:'left', marginBottom: '10px', marginTop: '20px'}}>TIME</p>
                             <div className="time-grid">
                                 {['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:30 PM'].map(t => (
                                     <button key={t} className={selectedTime === t ? 'active' : ''} onClick={() => setSelectedTime(t)}>{t}</button>
