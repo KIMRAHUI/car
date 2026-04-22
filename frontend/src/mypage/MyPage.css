@@ -431,6 +431,92 @@
     color: #555;
     margin: 4px 0;
 }
+/* 1. 날짜 칸의 기준점 설정 */
+.day {
+    position: relative;
+    cursor: pointer;
+}
+
+/* 2. 빨간 동그라미 스타일  */
+.red-dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 5px;
+    height: 5px;
+    background-color: #ff4d4f;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+/* 3. 커스텀 툴팁 스타일 */
+.res-tooltip {
+    display: none; /* 평소에는 숨김 */
+    position: absolute;
+    bottom: 120%; /* 날짜 숫자 위로 띄움 */
+    left: 50%;
+    transform: translateX(-50%); /* 중앙 정렬 */
+    background-color: rgba(26, 26, 26, 0.95); /* 어두운 반투명 배경 */
+    color: #FFFFFF;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap; /* 줄바꿈 방지 */
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    pointer-events: none; /* 툴팁이 마우스 포인터를 방해하지 않게 설정 */
+}
+
+/* 날짜 칸에 마우스를 올리면 툴팁 표시 */
+.day:hover .res-tooltip {
+    display: block;
+    animation: fadeIn 0.2s ease-out; /* 부드러운 등장 효과 */
+}
+
+/* 툴팁 내부 제목 (날짜 등) */
+.tooltip-title {
+    font-weight: 800;
+    color: #ff4d4f;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 3px;
+    display: block;
+}
+
+/* 툴팁 내부 개별 예약 항목 */
+.tooltip-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.tooltip-time {
+    color: #CCC;
+    font-weight: 600;
+}
+
+.tooltip-partner {
+    font-weight: 400;
+}
+
+/* 툴팁 하단 화살표 (말꼬리) */
+.res-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(26, 26, 26, 0.95) transparent transparent transparent;
+}
+
+/* 부드러운 애니메이션 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, 5px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 
 @media screen and (max-width: 1024px) {
     .mypage-main {

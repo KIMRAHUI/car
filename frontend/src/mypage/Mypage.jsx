@@ -5,7 +5,7 @@ import './MyPage.css';
 import {Link} from "react-router-dom";
 import carImage from '../assets/image/mypage/ProfileImage.png';
 
-// [수정] 실제 경로와 파일명에 맞춰서 임포트 (경로: src/assets/image/modal)
+// 실제 경로와 파일명에 맞춰서 임포트 (경로: src/assets/image/modal)
 import Hyundai from '../assets/image/modal/Hyundai.png';
 import Kia from '../assets/image/modal/Kia.png';
 import Chevrolet from '../assets/image/modal/Chevrolet.png';
@@ -21,7 +21,7 @@ import Volvo from '../assets/image/modal/Volvo.png';
 import Toyota from '../assets/image/modal/Toyota.png';
 import Nissan from '../assets/image/modal/Nissan.png';
 
-// [추가] 분리된 모달 컴포넌트들 임포트
+//분리된 모달 컴포넌트들 임포트
 import WithdrawModal from '../components/mypage/WithdrawModal.jsx';
 import EditChoiceModal from '../components/mypage/EditChoiceModal.jsx';
 import VehicleEditModal from '../components/mypage/VehicleEditModal.jsx';
@@ -481,24 +481,23 @@ const MyPage = () => {
 
                     </div>
 
-
                     <div className="right-content">
 
                         {/* 예약 */}
                         {rightTab === 'reservation' && (
                             <div className="reservation-section">
 
-                                {/* [개선] 캘린더 영역: 데이터 유무와 상관없이 상단에 항상 표시 */}
+                                {/* [개선] 캘린더 영역: 단일 정보 대신 reservations 배열 전체를 전달 */}
                                 <div className="calendar-mock" style={{marginBottom: '30px'}}>
                                     <CustomCalendar
-                                        // 예약이 하나라도 있다면 첫 번째 예약 날짜를 기준으로, 없다면 오늘 날짜 기준으로 표시
-                                        year={reservations.length > 0 ? new Date(reservations[0].reservedAt).getFullYear() : new Date().getFullYear()}
-                                        month={reservations.length > 0 ? new Date(reservations[0].reservedAt).getMonth() : new Date().getMonth()}
-                                        markDay={reservations.length > 0 ? new Date(reservations[0].reservedAt).getDate() : null}
-                                        timeMark={reservations.length > 0 ? new Date(reservations[0].reservedAt).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) : ""}
+                                        // 현재 뷰 기준: 예약이 있다면 첫 번째 예약 날짜, 없다면 오늘 날짜
+                                        selectedDate={null}
+                                        onDateClick={null}
+
+                                        // [수정] 중요: reservations 배열 전체를 전달하여
+                                        // 달력 내부에서 모든 예약 날짜에 빨간 점을 찍을 수 있게 함
+                                        reservations={reservations}
+
                                         isModal={false}
                                     />
                                 </div>
@@ -607,46 +606,97 @@ const MyPage = () => {
                         )}
 
 
-                        {/* 히스토리 (History) 섹션 수정 */}
+                        {/* 히스토리 (History) 섹션: status가 'COMPLETED'인 데이터만 출력 */}
                         {rightTab === 'history' && (
                             <div className="history-section">
                                 <div className="history-list">
-                                    {/* 개별 히스토리 카드 */}
-                                    <div className="history-card">
-                                        <div className="history-header">
-                                            <div className="date-badge">
-                                                <span className="year-month">2026.02</span>
-                                                <span className="day-strong">05</span>
-                                            </div>
-                                            <div className="header-info-main">
-                                                <div className="tag-row">
-                                                    <span className="tag-type">보험 수리</span>
-                                                    <button className="btn-review" onClick={() => setActiveModal('review')}>후기 작성</button>
-                                                </div>
-                                                <h4 className="shop-name">현대그린서비스 (대구 수성구)</h4>
-                                            </div>
+                                    {reservations.filter(r => r.status === 'COMPLETED').length === 0 ? (
+                                        <div className="no-history-info"
+                                             style={{padding: '50px 0', textAlign: 'center', color: '#999'}}>
+                                            완료된 정비 이력이 없습니다.
                                         </div>
+                                    ) : (
+                                        reservations
+                                            .filter(r => r.status === 'COMPLETED')
+                                            .map((his) => (
+                                                <div key={his.id} className="history-card-wrapper">
+                                                    <div className="history-card">
+                                                        <div className="history-header">
+                                                            <div className="date-badge">
+                                                                {/* 서버 날짜 데이터(reservedAt)를 연.월 / 일로 분리 */}
+                                                                <span className="year-month">
+                                            {new Date(his.reservedAt).getFullYear()}.{String(new Date(his.reservedAt).getMonth() + 1).padStart(2, '0')}
+                                        </span>
+                                                                <span className="day-strong">
+                                            {String(new Date(his.reservedAt).getDate()).padStart(2, '0')}
+                                        </span>
+                                                            </div>
+                                                            <div className="header-info-main">
+                                                                <div className="tag-row">
+                                                                    <span className="tag-type">{his.category}</span>
+                                                                    <button className="btn-review"
+                                                                            onClick={() => setActiveModal('review')}>후기
+                                                                        작성
+                                                                    </button>
+                                                                </div>
+                                                                <h4 className="shop-name">{his.partnerName}</h4>
+                                                            </div>
+                                                        </div>
 
-                                        <div className="history-body">
-                                            <div className="repair-desc">
-                                                <div className="desc-item">
-                                                    <span className="label">수리부위</span>
-                                                    <span className="value">앞범퍼, 후드</span>
+                                                        <div className="history-body">
+                                                            <div className="repair-desc">
+                                                                <div className="desc-item">
+                                                                    <span className="label">점검항목</span>
+                                                                    <span className="value">
+                                                {/* 일반 점검은 items 리스트를, 사고/고장은 description을 우선 출력 */}
+                                                                        {his.items && his.items.length > 0
+                                                                            ? his.items.join(', ')
+                                                                            : (his.description || "상세 내역 없음")}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="desc-item">
+                                                                    <span className="label">정비상태</span>
+                                                                    <span className="value" style={{
+                                                                        color: '#2ecc71',
+                                                                        fontWeight: 'bold'
+                                                                    }}>정비 완료</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* 완료된 정비에 첨부된 사진이 있다면 표시 (선택 사항) */}
+                                                            {(his.image1 || his.image2) && (
+                                                                <div className="history-images" style={{
+                                                                    marginTop: '15px',
+                                                                    display: 'flex',
+                                                                    gap: '10px'
+                                                                }}>
+                                                                    {his.image1 &&
+                                                                        <img src={`${SERVER_URL}${his.image1}`}
+                                                                             alt="history1" style={{
+                                                                            width: '60px',
+                                                                            height: '60px',
+                                                                            borderRadius: '4px',
+                                                                            objectFit: 'cover'
+                                                                        }}/>}
+                                                                    {his.image2 &&
+                                                                        <img src={`${SERVER_URL}${his.image2}`}
+                                                                             alt="history2" style={{
+                                                                            width: '60px',
+                                                                            height: '60px',
+                                                                            borderRadius: '4px',
+                                                                            objectFit: 'cover'
+                                                                        }}/>}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="history-divider" style={{
+                                                        margin: '20px 0',
+                                                        borderBottom: '1px solid #eee'
+                                                    }}></div>
                                                 </div>
-                                                <div className="desc-item">
-                                                    <span className="label">수리기간</span>
-                                                    <span className="value">5일 소요</span>
-                                                </div>
-                                                <div className="desc-item">
-                                                    <span className="label">수리방식</span>
-                                                    <span className="value">보험 수리(피해자)</span>
-                                                </div>
-                                            </div>
-                                            {/* 필요 시 이미지가 들어갈 자리 (목업에는 없으므로 깔끔하게 비워둠) */}
-                                        </div>
-                                    </div>
-                                    {/* 구분선 */}
-                                    <div className="history-divider"></div>
+                                            ))
+                                    )}
                                 </div>
                             </div>
                         )}

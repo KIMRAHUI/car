@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 
 /**
  * CustomCalendar - 연/월 이동 및 선택 기능이 추가된 버전
+ * [수정] 여러 건의 예약을 표시하기 위해 reservations 배열을 받도록 확장
+ * [추가] 예약 일자에 빨간 동그라미 표시 및 호버 시 시간/장소 툴팁 제공
  */
 const CustomCalendar = ({
                             selectedDate,
                             onDateClick,
-                            markDay,
-                            timeMark,
+                            reservations = [], // [추가] 전체 예약 데이터 리스트
                             isModal = false
                         }) => {
     const today = new Date();
@@ -43,9 +44,15 @@ const CustomCalendar = ({
     for (let d = 1; d <= lastDate; d++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const isSelected = selectedDate === dateStr;
-        const isMarked = markDay === d && today.getMonth() === month;
 
-        // 요일 계산 (0: 일요일, 6: 토요일)
+        // [수정] 해당 날짜(d)에 해당하는 모든 예약 찾기 (PENDING, CONFIRMED 상태인 것만)
+        const dayReservations = reservations.filter(res => {
+            const resDate = new Date(res.reservedAt);
+            return resDate.getFullYear() === year &&
+                resDate.getMonth() === month &&
+                resDate.getDate() === d;
+        });
+
         const dayOfWeek = new Date(year, month, d).getDay();
 
         // 지난 날짜 및 오늘 예약 불가 시간 처리(옵션)를 위해 오늘 날짜와 비교
@@ -55,7 +62,7 @@ const CustomCalendar = ({
         days.push(
             <div
                 key={d}
-                className={`day ${isSelected || isMarked ? 'active-day' : ''} ${isPast ? 'disabled-day' : ''}`}
+                className={`day ${isSelected || dayReservations.length > 0 ? 'active-day' : ''} ${isPast ? 'disabled-day' : ''}`}
                 onClick={() => {
                     if (!isPast && onDateClick) onDateClick(dateStr);
                 }}
@@ -67,13 +74,42 @@ const CustomCalendar = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'relative',
+                    minHeight: '40px',
                     // 일요일은 붉은색, 토요일은 파란색 계열로 텍스트 색상만 살짝 변경 (선택 시 제외)
                     color: isSelected ? '#FFF' : (dayOfWeek === 0 ? '#ff4d4f' : dayOfWeek === 6 ? '#1890ff' : 'inherit'),
                     ...(isModal && isSelected ? { background: '#1A1A1A', color: '#FFF', borderRadius: '4px' } : {})
                 }}
             >
+                {/* [추가] 예약이 있을 경우 숫자 위에 빨간 동그라미 표시 */}
+                {dayReservations.length > 0 && (
+                    <>
+                        <div style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '50%',
+                            transform: 'translateX(10px)',
+                            width: '5px',
+                            height: '5px',
+                            backgroundColor: '#ff4d4f',
+                            borderRadius: '50%',
+                            zIndex: 1
+                        }} />
+
+                        {/* [추가] 호버 시 나타나는 커스텀 툴팁 */}
+                        <div className="res-tooltip">
+                            <div className="tooltip-title">{d}일 예약 내역</div>
+                            {dayReservations.map((res, idx) => (
+                                <div key={idx} className="tooltip-item">
+                                    <span className="tooltip-time">
+                                        {new Date(res.reservedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    <span className="tooltip-partner">{res.partnerName}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
                 {d}
-                {isMarked && timeMark && <span className="time-mark" style={{fontSize: '10px', marginTop: '2px'}}>{timeMark}</span>}
             </div>
         );
     }

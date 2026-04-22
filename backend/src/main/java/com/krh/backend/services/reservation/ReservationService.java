@@ -113,9 +113,6 @@ public class ReservationService {
     }
 
     /**
-     * [READ] 마이페이지용 예약 목록 조회
-     */
-    /**
      * [READ] 마이페이지용 예약 목록 조회 (아이템 리스트 포함)
      */
     public List<Reservation> getReservations(String email) {
@@ -143,12 +140,18 @@ public class ReservationService {
     }
 
     /**
-     * [DELETE] 예약 취소
+     * [DELETE] 예약 취소 -> 히스토리 관리를 위해 삭제 대신 상태 변경(CANCELED)으로 수정
      */
     @Transactional
     public Result cancelReservation(Long id) {
         if (id == null) return CommonResult.FAILURE;
-        return this.reservationMapper.deleteReservationById(id) > 0
+
+        Reservation reservation = Reservation.builder()
+                .id(id)
+                .status("CANCELED")
+                .build();
+
+        return this.reservationMapper.updateReservation(reservation) > 0
                 ? CommonResult.SUCCESS
                 : CommonResult.FAILURE;
     }
@@ -159,6 +162,23 @@ public class ReservationService {
     @Transactional
     public Result updateReservation(Reservation reservation) {
         if (reservation == null || reservation.getId() == null) return CommonResult.FAILURE;
+        return this.reservationMapper.updateReservation(reservation) > 0
+                ? CommonResult.SUCCESS
+                : CommonResult.FAILURE;
+    }
+
+    /**
+     * [UPDATE] 정비 완료 처리 -> 'COMPLETED' 상태로 변경하여 히스토리에 정식 반영
+     */
+    @Transactional
+    public Result completeReservation(Long id) {
+        if (id == null) return CommonResult.FAILURE;
+
+        Reservation reservation = Reservation.builder()
+                .id(id)
+                .status("COMPLETED")
+                .build();
+
         return this.reservationMapper.updateReservation(reservation) > 0
                 ? CommonResult.SUCCESS
                 : CommonResult.FAILURE;
