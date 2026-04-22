@@ -13,9 +13,12 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/upload/profile/**")
                 .addResourceLocations("file:///C:/Users/노오리/Desktop/carmit_uploads/profile/");
 
-        // 2. [추가] 예약 증상 이미지 경로
-        // 바탕화면 carmit_uploads 폴더 안에 reservation 폴더를 만드시면 됩니다.
+        // 2. 예약 증상 이미지 경로
         registry.addResourceHandler("/upload/reservation/**")
                 .addResourceLocations("file:///C:/Users/노오리/Desktop/carmit_uploads/reservation/");
+
+        // 3.리뷰 이미지 경로
+        registry.addResourceHandler("/upload/review/**")
+                .addResourceLocations("file:///C:/Users/노오리/Desktop/carmit_uploads/review/");
     }
 }

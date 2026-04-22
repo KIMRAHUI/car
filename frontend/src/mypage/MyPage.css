@@ -111,20 +111,21 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
+    /*margin-bottom: 1rem;*/
 }
 
-.brand-logo-container {
-    background-color: #003478;
-    padding: 0.4rem 1.2rem;
-    border-radius: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+/*.brand-logo-container {*/
+/*    background-color: #003478;*/
+/*    padding: 0.6rem 1.5rem;*/
+/*    border-radius: 2rem;*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    justify-content: center;*/
+/*    min-width: 6rem;*/
+/*}*/
 
 .brand-logo-img {
-    height: 1.2rem;
+    height: 5.5rem;
     width: auto;
     object-fit: contain;
 }

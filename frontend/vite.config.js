@@ -7,6 +7,12 @@ export default defineConfig({
     server: {
         port: 5173,
         proxy: {
+            //리뷰 및 공통 API 연동 설정
+            '/api': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+                secure: false,
+            },
             // 백엔드 연동 설정: /user 뿐만 아니라 소셜 로그인 관련 경로도 추가
             '/user': {
                 target: 'http://localhost:8080',
@@ -19,7 +25,7 @@ export default defineConfig({
                 changeOrigin: true,
                 secure: false,
             },
-            // [추가] 예약 서비스 API 프록시 설정 (5173 포트에서 예약 내역 확인을 위해 필수)
+            //예약 서비스 API 프록시 설정 (5173 포트에서 예약 내역 확인을 위해 필수)
             '/service': {
                 target: 'http://localhost:8080',
                 changeOrigin: true,

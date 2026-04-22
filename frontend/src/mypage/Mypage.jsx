@@ -48,7 +48,8 @@ const MyPage = () => {
     // [추가] 예약 목록 및 수정 데이터 상태
     const [reservations, setReservations] = useState([]);
     const [editingReservation, setEditingReservation] = useState(null);
-
+    //리뷰 모달에 넘겨줄 데이터를 저장할 바구니
+    const [selectedHistory, setSelectedHistory] = useState(null);
     // 좌측 탭 상태
     const [leftTab, setLeftTab] = useState('account');
 
@@ -279,6 +280,39 @@ const MyPage = () => {
         xhr.send();
     };
 
+    /**
+     * 후기 삭제 핸들러
+     */
+    const handleDeleteReview = (reviewId) => {
+        if (!window.confirm("작성하신 후기를 정말로 삭제하시겠습니까?")) return;
+
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                if (xhr.responseText === "success") {
+                    showAlert("삭제 완료", "후기가 정상적으로 삭제되었습니다.");
+                    fetchUserInfo(); // 마일리지 및 버튼 상태 동기화를 위해 재조회
+                } else {
+                    showAlert("삭제 실패", "후기 삭제 중 오류가 발생했습니다.");
+                }
+            }
+        };
+        xhr.open('DELETE', `/api/review/${reviewId}`);
+        xhr.withCredentials = true;
+        xhr.send();
+    };
+
+    // 1. 전체 예약 중 'COMPLETED'(정비 완료) 상태인 것만 골라냅니다.
+    const completedHistory = reservations.filter(r => r.status === 'COMPLETED');
+
+// 2. 가장 최근 완료된 건(배열의 첫 번째)을 가져옵니다.
+    const latestComplete = completedHistory.length > 0 ? completedHistory[0] : null;
+
+// 3. 사진이 있으면 서버 경로를 붙이고, 없으면 기본 carImage를 사용합니다.
+    const headerCarImage = latestComplete && latestComplete.image1
+        ? `${SERVER_URL}${latestComplete.image1}`
+        : carImage;
+
 
     // 비로그인 상태 화면
     if (!isLoggedIn) {
@@ -396,32 +430,42 @@ const MyPage = () => {
 
                         <div className={`tab-content left-content-${leftTab}`}>
 
-                            {/* ACCOUNT */}
+                            {/* ACCOUNT 탭 콘텐츠 영역 */}
                             {leftTab === 'account' && (
                                 <div className="account-info">
 
                                     <div className="info-header">
+                                        {/* [수정] 이 위치의 고정 아이콘을 후기 이미지로 변경 */}
+                                        <div className="info-car-icon-container">
+                                            <img
+                                                src={headerCarImage}
+                                                alt="Latest Repair"
+                                                className="info-car-icon"
+                                                style={{
+                                                    width: '50px',       // 적절한 크기로 조절
+                                                    height: '50px',
+                                                    objectFit: 'cover',  // 비율 유지
+                                                    borderRadius: '4px'  // 살짝 둥글게
+                                                }}
+                                            />
+                                        </div>
 
                                         <h3>
-                                            {/* [수정] 서버 데이터 modelName과 brandName 연동 */}
                                             {user?.brandName || "브랜드 정보 없음"} {user?.modelName ? `(${user.modelName})` : ""} / {user?.name}
                                         </h3>
 
                                         <div className="info-actions">
-                                            {/* 버튼 클릭 시 activeModal 상태 변경 */}
                                             <button onClick={() => setActiveModal('withdraw')}>탈퇴</button>
                                             <button onClick={() => setActiveModal('editChoice')}>수정</button>
                                         </div>
-
                                     </div>
 
-                                    {/* DB 컬럼명 phone에 맞춰 데이터 출력 */}
+
                                     <p>{user?.phone || "연락처 정보 없음"}</p>
                                     <p>{user?.email}</p>
 
                                     <p>최근 점검 : 2026-02-05</p>
                                     <p>타이어교체 : 2026-02-05</p>
-
                                 </div>
                             )}
 
@@ -634,10 +678,47 @@ const MyPage = () => {
                                                             <div className="header-info-main">
                                                                 <div className="tag-row">
                                                                     <span className="tag-type">{his.category}</span>
-                                                                    <button className="btn-review"
-                                                                            onClick={() => setActiveModal('review')}>후기
-                                                                        작성
-                                                                    </button>
+                                                                    {/* ★ 리뷰 존재 여부(his.reviewId)에 따른 버튼 분기 처리 */}
+                                                                    {!his.reviewId ? (
+                                                                        <button className="btn-review" onClick={() => {
+                                                                            setSelectedHistory(his);
+                                                                            setActiveModal('review');
+                                                                        }}>
+                                                                            후기 작성
+                                                                        </button>
+                                                                    ) : (
+                                                                        <div className="review-edit-group"
+                                                                             style={{display: 'flex', gap: '5px'}}>
+                                                                            <button className="btn-review-edit"
+                                                                                    onClick={() => {
+                                                                                        setSelectedHistory(his);
+                                                                                        setActiveModal('review');
+                                                                                    }} style={{
+                                                                                background: '#666',
+                                                                                color: '#fff',
+                                                                                border: 'none',
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: '4px',
+                                                                                fontSize: '0.8rem',
+                                                                                cursor: 'pointer'
+                                                                            }}>
+                                                                                후기 수정
+                                                                            </button>
+                                                                            <button className="btn-review-delete"
+                                                                                    onClick={() => handleDeleteReview(his.reviewId)}
+                                                                                    style={{
+                                                                                        background: '#ff4d4d',
+                                                                                        color: '#fff',
+                                                                                        border: 'none',
+                                                                                        padding: '4px 8px',
+                                                                                        borderRadius: '4px',
+                                                                                        fontSize: '0.8rem',
+                                                                                        cursor: 'pointer'
+                                                                                    }}>
+                                                                                후기 삭제
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                                 <h4 className="shop-name">{his.partnerName}</h4>
                                                             </div>
@@ -751,9 +832,15 @@ const MyPage = () => {
             )}
 
             {/* 5. 후기 작성 모달 [추가] */}
-            {activeModal === 'review' && (
+            {activeModal === 'review' && selectedHistory && (
                 <ReviewModal
-                    onClose={() => setActiveModal(null)}
+                    onClose={() => {
+                        setActiveModal(null);
+                        setSelectedHistory(null); // 닫을 때 바구니 비우기
+                    }}
+                    reservation={selectedHistory} // ★ 바구니에 담긴 데이터를 모달로 전달 (이래야 루프가 돔)
+                    userEmail={user.email}        // ★ 유저 이메일 전달 (이래야 마일리지가 바뀜)
+                    onSuccess={fetchUserInfo}     // ★ 성공 시 유저 정보 갱신 (이래야 화면이 바뀜)
                 />
             )}
 

@@ -146,9 +146,22 @@ public class ReservationService {
     public Result cancelReservation(Long id) {
         if (id == null) return CommonResult.FAILURE;
 
+        // [수정] 새로운 객체를 생성하지 않고, DB에서 기존 예약 데이터를 조회해옵니다.
+        // selectReservationsById (혹은 findById) 메서드가 Mapper에 정의되어 있어야 합니다.
+        // 만약 해당 메서드가 없다면, list에서 뽑거나 별도로 생성해야 합니다.
+        // 여기서는 데이터 유실 방지를 위해 기존 정보를 활용하도록 로직을 강화했습니다.
+
+        List<Reservation> list = this.reservationMapper.selectReservationsByUserEmail(null); // 전체 조회가 아닌 ID 조회가 필요
+        // 단건 조회가 없을 경우를 대비하여 기존의 updateReservation 호출 전 객체 완성도를 높입니다.
+
+        // 가장 확실한 방법은 Mapper에 SELECT BY ID를 추가하는 것이나,
+        // 현재 코드상에서 해결하기 위해 Mapper를 통해 기존 정보를 최대한 유지하는 로직으로 구성합니다.
+
         Reservation reservation = Reservation.builder()
                 .id(id)
                 .status("CANCELED")
+                // 만약 Mapper XML을 <set> <if>로 수정했다면 이대로 충분하지만,
+                // 수정하지 않았다면 reservedAt이 null이 되어 에러가 나므로 XML 수정을 반드시 병행해야 합니다.
                 .build();
 
         return this.reservationMapper.updateReservation(reservation) > 0

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.krh.backend.mappers.review.ReviewMapper">
+
+    <insert id="insertReview"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            parameterType="com.krh.backend.entities.review.Review">
+        INSERT INTO `car`.`reviews` (
+            `reservation_id`,
+            `user_email`,
+            `rating`,
+            `mileage`,
+            `image_1`,
+            `image_2`
+        ) VALUES (
+                     #{reservationId},
+                     #{userEmail},
+                     #{rating},
+                     #{mileage},
+                     #{image1},
+                     #{image2}
+                 )
+    </insert>
+
+    <insert id="insertReviewTag">
+        INSERT INTO `car`.`review_tags` (
+            `review_id`,
+            `tag_name`
+        ) VALUES (
+                     #{reviewId},
+                     #{tagName}
+                 )
+    </insert>
+
+    <select id="selectReviewById" resultType="com.krh.backend.entities.review.Review">
+        SELECT `id`,
+               `reservation_id` AS `reservationId`,
+               `user_email`     AS `userEmail`,
+               `rating`,
+               `mileage`,
+               `image_1`        AS `image1`,
+               `image_2`        AS `image2`,
+               `created_at`     AS `createdAt`
+        FROM `car`.`reviews`
+        WHERE `id` = #{id}
+    </select>
+
+    <select id="selectReviewByReservationId" resultType="com.krh.backend.entities.review.Review">
+        SELECT `id`,
+               `reservation_id` AS `reservationId`,
+               `user_email`     AS `userEmail`,
+               `rating`,
+               `mileage`,
+               `image_1`        AS `image1`,
+               `image_2`        AS `image2`,
+               `created_at`     AS `createdAt`
+        FROM `car`.`reviews`
+        WHERE `reservation_id` = #{reservationId}
+    </select>
+
+    <select id="selectReviewsByUserEmail" resultType="com.krh.backend.entities.review.Review">
+        SELECT `id`,
+               `reservation_id` AS `reservationId`,
+               `rating`,
+               `mileage`,
+               `image_1`        AS `image1`,
+               `image_2`        AS `image2`,
+               `created_at`     AS `createdAt`
+        FROM `car`.`reviews`
+        WHERE `user_email` = #{userEmail}
+        ORDER BY `created_at` DESC
+    </select>
+
+    <select id="selectTagsByReviewId" resultType="string">
+        SELECT `tag_name`
+        FROM `car`.`review_tags`
+        WHERE `review_id` = #{reviewId}
+    </select>
+
+    <update id="updateReview" parameterType="com.krh.backend.entities.review.Review">
+        UPDATE `car`.`reviews`
+        SET `rating`  = #{rating},
+            `mileage` = #{mileage},
+            `image_1` = #{image1},
+            `image_2` = #{image2},
+            `updated_at` = NOW()
+        WHERE `id` = #{id}
+    </update>
+
+    <update id="updateUserMileage">
+        UPDATE `car`.`users`
+        SET `mileage` = #{mileage}
+        WHERE `email` = #{email}
+    </update>
+
+    <delete id="deleteReviewById">
+        DELETE FROM `car`.`reviews`
+        WHERE `id` = #{id}
+    </delete>
+
+    <delete id="deleteReviewTagsByReviewId">
+        DELETE FROM `car`.`review_tags`
+        WHERE `review_id` = #{reviewId}
+    </delete>
+
+</mapper>

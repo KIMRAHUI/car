@@ -38,20 +38,20 @@
 
     <select id="selectReservationsByUserEmail"
             resultType="com.krh.backend.entities.reservation.Reservation">
-        SELECT `id`,
-               `user_email`   AS `userEmail`,
-               `partner_id`   AS `partnerId`,
-               `partner_name` AS `partnerName`,
-               `category`,
-               `description`,
-               `image_1`      AS `image1`,
-               `image_2`      AS `image2`,
-               `reserved_at`  AS `reservedAt`,
-               `status`,
-               `created_at`   AS `createdAt`
-        FROM `car`.`reservations`
-        WHERE `user_email` = #{userEmail}
-        ORDER BY `reserved_at` DESC
+        SELECT r.`id`,
+               r.`user_email`   AS `userEmail`,
+               r.`partner_id`   AS `partnerId`,
+               r.`partner_name` AS `partnerName`,
+               r.`category`,
+               r.`description`,
+               r.`image_1`      AS `image1`,
+               r.`image_2`      AS `image2`,
+               r.`reserved_at`  AS `reservedAt`,
+               r.`status`,
+               r.`created_at`   AS `createdAt`,
+               rv.`id`          AS `reviewId`  FROM `car`.`reservations` r
+                                                        LEFT JOIN `car`.`reviews` rv ON r.`id` = rv.`reservation_id` WHERE r.`user_email` = #{userEmail}
+        ORDER BY r.`reserved_at` DESC
     </select>
 
     <select id="selectItemsByReservationId"
@@ -66,9 +66,11 @@
     <update id="updateReservation"
             parameterType="com.krh.backend.entities.reservation.Reservation">
         UPDATE `car`.`reservations`
-        SET `reserved_at` = #{reservedAt},
-            `description` = #{description},
-            `status`      = #{status}
+        <set>
+            <if test="reservedAt != null">`reserved_at` = #{reservedAt},</if>
+            <if test="description != null">`description` = #{description},</if>
+            <if test="status != null">`status` = #{status}</if>
+        </set>
         WHERE `id` = #{id}
     </update>
 

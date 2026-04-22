@@ -23,5 +23,6 @@ public class Reservation {
     private LocalDateTime createdAt;  // 예약 신청 시간 (기본 NOW())
     private String image1; // 추가
     private String image2; // 추가
-    private List<String> items;
+    private List<String> items;//상세항목
+    private Long reviewId; // 해당예약과 연겨로딘 리뷰의 ID 없으면 null[결과전달용]
 }
