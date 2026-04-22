@@ -26,5 +26,9 @@ public class Review {
     // 로직 처리를 위해 사용하는 필드
     private List<String> selectedTags;
 
-    
+    // 조인 결과를 담기 위한 필드 추가
+    private String carModel;   // 차종
+    private String shopName;   // 정비소 이름
+    private String repairPart; // 수리 부위
+
 }

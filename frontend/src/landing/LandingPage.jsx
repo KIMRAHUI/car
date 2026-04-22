@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 네비게이션을 위한 추가
+import React, { useState, useEffect } from 'react'; // useEffect 추가
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // 데이터 조회를 위한 axios 추가
 import './LandingPage.css';
 import Header from '../components/header/Header.jsx';
 import landingHeroBg from '../assets/image/landing/landing_hero.png';
@@ -9,7 +10,7 @@ import repairImg from '../assets/image/landing/repair.png';
 import tireImg from '../assets/image/landing/tire.png';
 import oilImg from '../assets/image/landing/oil.png';
 
-// 탭 메뉴 데이터
+// 탭 메뉴 데이터 (기존 유지)
 const tabData = [
     {
         id: 0,
@@ -31,47 +32,32 @@ const tabData = [
     }
 ];
 
-// 조언 반영: 정형화된 리뷰 데이터 (별점 및 태그 포함)
-const reviewData = [
-    {
-        id: 1,
-        carModel: '2020 메르세데스벤츠 A클래스',
-        date: '2026.02.05',
-        rating: 5,
-        tags: ['#친절한 설명', '#꼼꼼한 수리', '#정직한 점검'],
-        info: '수리부위 : 앞범퍼, 후드 | 수리방식 : 보험 수리'
-    },
-    {
-        id: 2,
-        carModel: 'BMW 320d',
-        date: '2026.02.01',
-        rating: 4,
-        tags: ['#합리적인 가격', '#신속한 작업'],
-        info: '수리부위 : 엔진오일, 필터류 | 일반 정비'
-    },
-    {
-        id: 3,
-        carModel: '현대 그랜저 IG',
-        date: '2026.01.28',
-        rating: 5,
-        tags: ['#전문적인 정비', '#친절한 설명', '#정직한 점검'],
-        info: '수리부위 : 타이어 4본 교체 | 소모품 교체'
-    },
-    {
-        id: 4,
-        carModel: '제네시스 GV80',
-        date: '2026.01.20',
-        rating: 4,
-        tags: ['#꼼꼼한 수리', '#신속한 작업'],
-        info: '수리부위 : 측면 도색 | 보험 수리'
-    }
-];
-
 const LandingPage = () => {
     const [activeTab, setActiveTab] = useState(0);
-    const navigate = useNavigate(); // 페이지 이동 함수 초기화
+    const [reviews, setReviews] = useState([]); // 서버 데이터를 저장할 상태
+    const navigate = useNavigate();
 
-    // 별점 렌더링 헬퍼 함수
+    // 서버로부터 최신 후기 목록을 가져오는 로직
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                // 백엔드 ReviewController의 리스트 API 호출
+                const response = await axios.get('/api/review/list');
+                setReviews(response.data);
+            } catch (error) {
+                console.error("후기 데이터를 가져오는 중 오류가 발생했습니다.", error);
+            }
+        };
+        fetchReviews();
+    }, []);
+
+    // 카드 클릭 시 서비스 메뉴로 이동하며 해당 정비소 정보 전달
+    const handleCardClick = (shopName) => {
+        // location state를 통해 상호명을 전달하여 서비스 페이지에서 즉시 위치를 띄울 수 있게 함
+        navigate('/service', { state: { targetShop: shopName } });
+    };
+
+    // 별점 렌더링 헬퍼 함수 (기존 유지)
     const renderStars = (rating) => {
         return (
             <div className="star-rating">
@@ -107,7 +93,7 @@ const LandingPage = () => {
                 ></div>
             </section>
 
-            {/* --- Section 2: Review --- */}
+            {/* --- Section 2: Review (요청사항 반영 수정) --- */}
             <section className="section review-section">
                 <div className="review-header">
                     <div>
@@ -121,33 +107,46 @@ const LandingPage = () => {
                 </div>
 
                 <div className="review-cards">
-                    {reviewData.map((review) => (
-                        <div className="card" key={review.id}>
+                    {reviews.map((review) => (
+                        <div
+                            className="card"
+                            key={review.id}
+                            onClick={() => handleCardClick(review.shopName)} // 카드 클릭 시 이동 로직
+                            style={{ cursor: 'pointer' }}
+                        >
                             <div className="card-img-placeholder">
-                                {/* 정비 전/후 이미지가 들어갈 자리 */}
+                                {/* 업로드한 1번째 이미지 반영 (WebConfig 매핑 활용) */}
+                                {review.image1 ? (
+                                    <img src={review.image1} alt="정비 사진" className="review-card-img" />
+                                ) : (
+                                    <div className="no-image-text">정비 사진 없음</div>
+                                )}
                             </div>
                             <div className="card-content">
                                 {renderStars(review.rating)}
 
                                 <div className="card-info-header">
                                     <h3>{review.carModel}</h3>
-                                    <span className="date">{review.date}</span>
+                                    <span className="date">{review.createdAt || review.date}</span>
                                 </div>
 
                                 <div className="review-tags">
-                                    {review.tags.map((tag, index) => (
-                                        <span key={index} className="tag">{tag}</span>
+                                    {(review.selectedTags || []).map((tag, index) => (
+                                        <span key={index} className="tag">#{tag}</span>
                                     ))}
                                 </div>
 
-                                <p className="review-info-text">{review.info}</p>
+                                {/* 자동차 정비 상호명 내용 추가 */}
+                                <p className="review-info-text">
+                                    수리부위 : {review.repairPart} | <strong>{review.shopName}</strong>
+                                </p>
                             </div>
                         </div>
                     ))}
                 </div>
             </section>
 
-            {/* --- Section 3~5: Tab Menu --- */}
+            {/* --- Section 3~5: Tab Menu (기존 유지) --- */}
             <section className="section how-it-works-section">
                 <div className="how-left">
                     <h2 className="how-title">HOW IT<br/>WORKS:</h2>
@@ -165,10 +164,12 @@ const LandingPage = () => {
                                         <div className="tab-text-group">
                                             <h3>{tab.title}</h3>
                                             <p>{tab.desc}</p>
-                                            {/* 조언 반영: 서비스 페이지로 이동하는 링크 추가 */}
                                             <button
                                                 className="explore-btn"
-                                                onClick={() => navigate('/service')}
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // 카드 이동과 중복 방지
+                                                    navigate('/service');
+                                                }}
                                             >
                                                 EXPLORE ↗
                                             </button>
@@ -193,7 +194,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* 챗봇 버튼 */}
+            {/* 챗봇 버튼 (기존 유지) */}
             <div className="floating-chatbot">
                 <img src={chatbotImg} alt="chatbot" />
             </div>

@@ -77,7 +77,35 @@
         FROM `car`.`review_tags`
         WHERE `review_id` = #{reviewId}
     </select>
+    <select id="selectAllReviews" resultType="com.krh.backend.entities.review.Review">
+        SELECT
+            r.`id`,
+            r.`reservation_id` AS `reservationId`,
+            r.`user_email`     AS `userEmail`,
+            r.`rating`,
+            r.`mileage`,
+            r.`image_1`        AS `image1`,
+            r.`image_2`        AS `image2`,
+            r.`created_at`     AS `createdAt`,
 
+            /* 1. car_models 테이블에서 실제 모델명을 가져옵니다 */
+            cm.`model_name`    AS `carModel`,
+
+            /* 2. reservations 테이블에서 업체명을 가져옵니다 */
+            res.`partner_name` AS `shopName`,
+
+            /* 3. 수리 항목들을 합쳐서 가져옵니다 */
+            (SELECT GROUP_CONCAT(ri.`item_name` SEPARATOR ', ')
+             FROM `car`.`reservation_items` ri
+             WHERE ri.`reservation_id` = r.`reservation_id`) AS `repairPart`
+
+        FROM `car`.`reviews` r
+                 LEFT JOIN `car`.`reservations` res ON r.`reservation_id` = res.`id`
+                 LEFT JOIN `car`.`users` u           ON r.`user_email` = u.`email`
+            /* 추가된 조인: 유저의 car_model_id와 car_models의 model_id를 연결 */
+                 LEFT JOIN `car`.`car_models` cm     ON u.`car_model_id` = cm.`model_id`
+        ORDER BY r.`created_at` DESC
+    </select>
     <update id="updateReview" parameterType="com.krh.backend.entities.review.Review">
         UPDATE `car`.`reviews`
         SET `rating`  = #{rating},

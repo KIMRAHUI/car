@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/review")
 @RequiredArgsConstructor
@@ -23,6 +25,12 @@ public class ReviewController {
     public Review getReview(@PathVariable Long reviewId) {
         // 서비스에서 ID로 리뷰와 태그 정보를 모두 채워서 반환해야 함
         return this.reviewService.getReviewDetail(reviewId);
+    }
+
+    @GetMapping("/list")
+    public List<Review> getAllReviews() {
+        // 모든 리뷰와 각 리뷰의 태그 정보를 포함하여 반환하는 로직
+        return this.reviewService.getAllReviews();
     }
 
     /**

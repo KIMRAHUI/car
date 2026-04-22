@@ -39,4 +39,6 @@ public interface ReviewMapper {
 
     // [DELETE] 후기 삭제 시 관련 태그 전체 삭제
     int deleteReviewTagsByReviewId(@Param("reviewId") Long reviewId);
+
+    List<Review> selectAllReviews();
 }

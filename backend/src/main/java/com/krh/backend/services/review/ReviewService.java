@@ -25,6 +25,23 @@ public class ReviewService {
     private final String UPLOAD_PATH = "C:/Users/노오리/Desktop/carmit_uploads/review/";
 
     /**
+     * [READ] 모든 후기 목록 조회 (랜딩페이지 및 리스트용)
+     * 각 리뷰에 연관된 태그 리스트를 함께 채워서 반환합니다.
+     */
+    public List<Review> getAllReviews() {
+        // 1. 모든 리뷰 기본 정보 조회
+        List<Review> reviews = this.reviewMapper.selectAllReviews();
+
+        // 2. 각 리뷰마다 태그 리스트 조회 후 셋팅
+        if (reviews != null && !reviews.isEmpty()) {
+            for (Review review : reviews) {
+                review.setSelectedTags(this.reviewMapper.selectTagsByReviewId(review.getId()));
+            }
+        }
+        return reviews;
+    }
+
+    /**
      * [READ] 후기 상세 정보 조회 (수정 모드 진입 시 데이터 채우기용)
      */
     public Review getReviewDetail(Long reviewId) {
