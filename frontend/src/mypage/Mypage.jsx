@@ -160,7 +160,7 @@ const MyPage = () => {
     }, []);
 
     /**
-     * [추가] 이미지 즉시 업로드 핸들러
+     * 이미지 즉시 업로드 핸들러
      * 이미지 클릭 시 인증 없이 프로필 사진만 즉시 업데이트합니다.
      */
     const handleImageClickUpload = (e) => {
@@ -520,7 +520,7 @@ const MyPage = () => {
                                             }}>
                                                 {/* 예약 상세 */}
                                                 <div className="reservation-detail">
-                                                    <h4 className="shop-name">{res.partnerName}</h4>
+                                                    <h4 className="res-shop-name">{res.partnerName}</h4>
                                                     <p className="shop-phone">상태: {res.status}</p>
 
 
@@ -607,43 +607,49 @@ const MyPage = () => {
                         )}
 
 
-                        {/* 히스토리 (샘플 영역) */}
+                        {/* 히스토리 (History) 섹션 수정 */}
                         {rightTab === 'history' && (
                             <div className="history-section">
+                                <div className="history-list">
+                                    {/* 개별 히스토리 카드 */}
+                                    <div className="history-card">
+                                        <div className="history-header">
+                                            <div className="date-badge">
+                                                <span className="year-month">2026.02</span>
+                                                <span className="day-strong">05</span>
+                                            </div>
+                                            <div className="header-info-main">
+                                                <div className="tag-row">
+                                                    <span className="tag-type">보험 수리</span>
+                                                    <button className="btn-review" onClick={() => setActiveModal('review')}>후기 작성</button>
+                                                </div>
+                                                <h4 className="shop-name">현대그린서비스 (대구 수성구)</h4>
+                                            </div>
+                                        </div>
 
-                                <div className="history-card">
-
-                                    <div className="history-header">
-                                        <h2>2026-02-05</h2>
-                                        <span className="tag-type">보험 수리</span>
-                                        {/* [수정] 버튼 클릭 시 activeModal을 review로 변경 */}
-                                        <button className="btn-review" onClick={() => setActiveModal('review')}>
-                                            후기 작성
-                                        </button>
+                                        <div className="history-body">
+                                            <div className="repair-desc">
+                                                <div className="desc-item">
+                                                    <span className="label">수리부위</span>
+                                                    <span className="value">앞범퍼, 후드</span>
+                                                </div>
+                                                <div className="desc-item">
+                                                    <span className="label">수리기간</span>
+                                                    <span className="value">5일 소요</span>
+                                                </div>
+                                                <div className="desc-item">
+                                                    <span className="label">수리방식</span>
+                                                    <span className="value">보험 수리(피해자)</span>
+                                                </div>
+                                            </div>
+                                            {/* 필요 시 이미지가 들어갈 자리 (목업에는 없으므로 깔끔하게 비워둠) */}
+                                        </div>
                                     </div>
-
-                                    <h4 className="shop-name">
-                                        대구 수성구 지범로 41-4 현대그린서비스
-                                    </h4>
-
-                                    <p className="shop-phone">
-                                        0507-1441-0012
-                                    </p>
-
-                                    {/* [수정] 히스토리 영역에서도 디폴트 더미 이미지 삭제 */}
-
-
-                                    <div className="repair-desc">
-                                        <p>수리부위 : 앞범퍼, 후드</p>
-                                        <p>수리기간 : 5일 소요</p>
-                                        <p>수리방식 : 보험 수리(피해자)</p>
-                                    </div>
-
+                                    {/* 구분선 */}
+                                    <div className="history-divider"></div>
                                 </div>
-
                             </div>
                         )}
-
                     </div>
                 </section>
 

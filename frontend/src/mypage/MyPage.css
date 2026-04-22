@@ -1,6 +1,6 @@
 /* 전체 배경 및 래퍼 */
 .mypage-wrapper {
-    background-color: #D6D6D6; /* 제공해주신 이미지와 유사한 라이트 그레이 배경 */
+    background-color: #D6D6D6;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -101,7 +101,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding-top: 1.5rem; /* 좌측 헤더 높이만큼 약간 내림 */
+    padding-top: 1.5rem;
 }
 
 /* --------------------------------------
@@ -114,14 +114,19 @@
     margin-bottom: 1rem;
 }
 
-.brand-logo {
-    background-color: #003478; /* 포드 로고 색상 느낌 */
-    color: white;
-    padding: 0.2rem 1rem;
-    border-radius: 1rem;
-    font-weight: 800;
-    font-size: 0.875rem;
-    font-style: italic;
+.brand-logo-container {
+    background-color: #003478;
+    padding: 0.4rem 1.2rem;
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-logo-img {
+    height: 1.2rem;
+    width: auto;
+    object-fit: contain;
 }
 
 .car-name {
@@ -161,23 +166,14 @@
     cursor: pointer;
     border-radius: 0.25rem 0.25rem 0 0;
     color: #666;
-    background-color: #CFCFCF; /* 기본 비활성 탭 색상 */
+    background-color: #CFCFCF;
     transition: all 0.2s ease;
 }
 
-/* 좌측 탭 액티브 상태에 따른 색상 변화 (이미지 반영) */
-.tab-btn.active-account {
-    background-color: #FFFFFF;
-    color: #1A1A1A;
-}
-.tab-btn.active-check {
-    background-color: #E8E8E8;
-    color: #1A1A1A;
-}
-.tab-btn.active-replace {
-    background-color: #C4C4C4;
-    color: #1A1A1A;
-}
+/* 좌측 탭 액티브 상태에 따른 색상 변화 */
+.tab-btn.active-account { background-color: #FFFFFF; color: #1A1A1A; }
+.tab-btn.active-check { background-color: #E8E8E8; color: #1A1A1A; }
+.tab-btn.active-replace { background-color: #C4C4C4; color: #1A1A1A; }
 
 .tab-content {
     min-height: 12.5rem;
@@ -185,7 +181,6 @@
     padding: 2rem;
 }
 
-/* 좌측 탭 컨텐츠 배경색 매칭 */
 .left-content-account { background-color: #FFFFFF; }
 .left-content-check { background-color: #E8E8E8; }
 .left-content-replace { background-color: #C4C4C4; }
@@ -232,15 +227,10 @@
 }
 
 /* --------------------------------------
-   우측 패널 상세 디자인
+   우측 패널 디자인
 --------------------------------------- */
-.right-tab-btn {
-    background-color: #CFCFCF;
-}
-.right-tab-btn.active {
-    background-color: #FFFFFF;
-    color: #1A1A1A;
-}
+.right-tab-btn { background-color: #CFCFCF; }
+.right-tab-btn.active { background-color: #FFFFFF; color: #1A1A1A; }
 
 .right-content {
     background-color: #FFFFFF;
@@ -250,69 +240,20 @@
     box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.05);
 }
 
-/* 달력 모의 UI (Grid) */
-.calendar-mock {
-    margin-bottom: 2rem;
-}
-
-.cal-header {
-    text-align: center;
-    font-size: 1.125rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-}
-
-.cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    border-top: 0.125rem solid #1A1A1A;
-    border-bottom: 0.125rem solid #1A1A1A;
-}
-
-.day-name {
-    text-align: center;
-    font-weight: 800;
-    padding: 0.75rem 0;
-    border-bottom: 0.063rem solid #E0E0E0;
-    font-size: 0.875rem;
-}
-
-.day {
-    text-align: center;
-    padding: 1rem 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-    border-bottom: 0.063rem solid #E0E0E0;
-    border-right: 0.063rem solid #E0E0E0;
-    position: relative;
-}
-
-.day:nth-child(7n) { border-right: none; }
-.day.empty { background-color: #F9F9F9; }
-
-/* 5일 예약된 날짜 스타일 */
-.active-day {
-    background-color: #333333;
-    color: white;
-}
-
-.time-mark {
-    display: block;
-    font-size: 0.5rem;
-    margin-top: 0.25rem;
-    color: #CCC;
-}
-
-/* 정비소 상세 내역 공통 (예약/히스토리) */
+/* 정비소 상세 내역 공통 (예약 전용) */
 .shop-name {
+
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-left:-5rem;
+    margin-top:1.5rem;
+}
+.res-shop-name {
     font-size: 0.95rem;
     font-weight: 800;
     margin: 0 0 0.25rem 0;
+    color: #1A1A1A;
 }
-
 .shop-phone {
     font-size: 0.75rem;
     color: #888;
@@ -356,67 +297,141 @@
     cursor: pointer;
 }
 
-/* 히스토리 전용 스타일 */
-.history-card {
-    margin-bottom: 2rem;
+/* --------------------------------------
+히스토리(History)
+--------------------------------------- */
+.history-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
+.history-card {
+    margin-bottom: 1rem;
+}
+
+/* 목업의 날짜 배지 디자인 */
+.date-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #1A1A1A;
+    color: white;
+    padding: 0.6rem;
+    min-width: 4rem;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
+}
+
+.year-month {
+    font-size: 0.7rem;
+    font-weight: 300;
+    letter-spacing: 0.05rem;
+    opacity: 0.8;
+}
+
+.day-strong {
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+/* 히스토리 헤더 레이아웃 */
 .history-header {
     display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.header-info-main {
+    flex: 1;
+}
+
+.tag-row {
+    display: flex;
+    justify-content: flex-end;
     align-items: center;
-    gap: 0.75rem;
     margin-bottom: 0.5rem;
 }
 
-.history-header h2 {
-    font-size: 1.5rem;
-    font-weight: 300; /* 이미지처럼 얇은 폰트 느낌 */
-    margin: 0;
-    letter-spacing: -0.05rem;
-}
-
 .tag-type {
-    font-size: 0.688rem;
-    padding: 0.125rem 0.4rem;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
     border: 0.063rem solid #CCC;
     border-radius: 0.125rem;
     color: #555;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .btn-review {
-    margin-left: auto;
     background: none;
     border: 0.063rem solid #CCC;
-    padding: 0.125rem 0.5rem;
-    font-size: 0.688rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
     border-radius: 0.125rem;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
+.btn-review:hover {
+    background-color: #f5f5f5;
+    border-color: #999;
+}
+
+/* 상세 내역 Label-Value 정렬 스타일 */
+.repair-desc {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background-color: #F9F9F9;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #F0F0F0;
+}
+
+.desc-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.desc-item .label {
+    width: 6rem;
+    color: #888;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.desc-item .value {
+    color: #1A1A1A;
+    font-weight: 400;
+}
+
+/* 점선 구분선 디자인 */
 .history-divider {
-    border-top: 0.063rem dashed #CCC;
-    margin: 2rem 0;
+    width: 100%;
+    height: 1px;
+    border-top: 0.08rem dashed #CCC;
+    opacity: 0.6;
 }
 
-/* 항목 텍스트가 길어질 때 말줄임 처리 */
+/* 말줄임 처리*/
 .item-ellipsis {
     display: block;
-    width: 100%;             /* 부모 요소 너비에 맞춤 */
-    white-space: nowrap;      /* 한 줄로 고정 */
-    overflow: hidden;        /* 넘치는 부분 숨김 */
-    text-overflow: ellipsis; /* 말줄임표(...) 활성화 */
-    font-size: 0.85rem;      /* 다른 텍스트와 크기 맞춤 */
-    color: #555;             /* 가독성 좋은 색상 */
-    margin: 4px 0;           /* 위아래 간격 */
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.85rem;
+    color: #555;
+    margin: 4px 0;
 }
 
-
-
-
-/* --------------------------------------
-   반응형 미디어 쿼리 (1024px, 768px)
---------------------------------------- */
 @media screen and (max-width: 1024px) {
     .mypage-main {
         padding: 2rem 1.5rem;
@@ -431,8 +446,8 @@
     .mypage-main {
         flex-direction: column;
     }
-    .left-panel{
-        margin-top:1.5rem
+    .left-panel {
+        margin-top: 1.5rem;
     }
     .left-panel, .right-panel {
         width: 100%;
@@ -443,5 +458,14 @@
     }
     .car-image-container {
         height: 15rem;
+    }
+
+    /* 모바일 환경에서 히스토리 헤더 조정 */
+    .history-header {
+        gap: 1rem;
+    }
+    .date-badge {
+        min-width: 3.5rem;
+        padding: 0.4rem;
     }
 }
