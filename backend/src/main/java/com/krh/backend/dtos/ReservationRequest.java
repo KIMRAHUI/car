@@ -22,7 +22,7 @@ public class ReservationRequest {
     // 3. 상세 증상 및 경위
     // - 고장: 선택한 증상 + 텍스트
     // - 사고: 사고 경위 텍스트
-    private String description;
+//    private String description;
 
     // 4. 예약 일시 (문자열 상태로 전달받음)
     private String selectedDate;  // "2026-04-21"

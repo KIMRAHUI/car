@@ -795,21 +795,13 @@ const MyPage = () => {
                                                     <div className="repair-desc">
                                                         <p>분류 : {res.category}</p>
 
-                                                        {/*상세 항목 리스트 출력 (쉼표로 연결 및 말줄임 처리) */}
-                                                        {res.category === '일반' && (
-                                                            <p className="item-ellipsis" title={res.items?.join(', ')}>
-                                                                항목 : {res.items && res.items.length > 0
-                                                                ? res.items.join(', ')
-                                                                : "선택된 항목이 없습니다."}
-                                                            </p>
-                                                        )}
+                                                        <p className="item-ellipsis" title={res.items?.join(', ')}>
+                                                            항목 : {res.items && res.items.length > 0
+                                                            ? res.items.join(', ')  // ['엔진오일', '타이어'] -> "엔진오일, 타이어"
+                                                            : "선택된 항목이 없습니다."}
+                                                        </p>
 
                                                         <p>일시 : {new Date(res.reservedAt).toLocaleString('ko-KR')}</p>
-
-                                                        {res.category !== '일반' && (
-                                                            <p>상세 : {res.description || "내용 없음"}</p>
-                                                        )}
-
                                                     </div>
                                                     <div className="res-actions">
                                                         <button onClick={() => handleCancelReservation(res.id)}>예약 취소
@@ -907,12 +899,12 @@ const MyPage = () => {
                                                             <div className="repair-desc">
                                                                 <div className="desc-item">
                                                                     <span className="label">점검항목</span>
-                                                                    <span className="value">
-                                                {/* 일반 점검은 items 리스트를, 사고/고장은 description을 우선 출력 */}
+                                                                    <span className="value" style={{ fontWeight: 'bold', color: '#333' }}>
+        {/* DB에서 가져온 아이템 리스트를 쉼표로 연결 */}
                                                                         {his.items && his.items.length > 0
                                                                             ? his.items.join(', ')
-                                                                            : (his.description || "상세 내역 없음")}
-                                                                    </span>
+                                                                            : "상세 내역 없음"}
+    </span>
                                                                 </div>
                                                                 <div className="desc-item">
                                                                     <span className="label">정비상태</span>
@@ -1024,7 +1016,7 @@ const MyPage = () => {
                 />
             )}
 
-            {/* 6. 예약 수정 모달*/}
+            {/* 6. 예약 수정 모달 */}
             {activeModal === 'resEdit' && editingReservation && (
                 <div className="modal-overlay" style={{
                     position: 'fixed',
@@ -1040,7 +1032,9 @@ const MyPage = () => {
                 }}>
                     <div className="modal-content"
                          style={{background: '#fff', padding: '30px', borderRadius: '10px', width: '400px'}}>
-                        <h2 style={{marginBottom: '20px', fontSize: '1.2rem', fontWeight: 'bold'}}>예약 변경</h2>
+                        <h2 style={{marginBottom: '20px', fontSize: '1.2rem', fontWeight: 'bold'}}>예약 일시 변경</h2>
+
+                        {/* 1. 방문 일시 수정 (이 기능은 백엔드에서 정상 작동함) */}
                         <div style={{marginBottom: '15px'}}>
                             <label style={{display: 'block', marginBottom: '5px', fontSize: '0.9rem'}}>방문 일시</label>
                             <input
@@ -1053,23 +1047,29 @@ const MyPage = () => {
                                 })}
                             />
                         </div>
+
+                        {/* 2. 상세 요청사항(textarea) 대신 선택 항목(Items) 표시로 변경 */}
                         <div style={{marginBottom: '20px'}}>
-                            <label style={{display: 'block', marginBottom: '5px', fontSize: '0.9rem'}}>상세 요청사항</label>
-                            <textarea
-                                style={{
-                                    width: '100%',
-                                    height: '100px',
-                                    padding: '10px',
-                                    border: '1px solid #ddd',
-                                    resize: 'none'
-                                }}
-                                value={editingReservation.description}
-                                onChange={(e) => setEditingReservation({
-                                    ...editingReservation,
-                                    description: e.target.value
-                                })}
-                            />
+                            <label style={{display: 'block', marginBottom: '5px', fontSize: '0.9rem'}}>선택한 수리 항목</label>
+                            <div style={{
+                                padding: '12px',
+                                background: '#f9f9f9',
+                                border: '1px solid #eee',
+                                borderRadius: '4px',
+                                fontSize: '0.85rem',
+                                color: '#333',
+                                lineHeight: '1.4',
+                                minHeight: '60px'
+                            }}>
+                                {editingReservation.items && editingReservation.items.length > 0
+                                    ? editingReservation.items.join(', ')
+                                    : "선택된 항목이 없습니다."}
+                            </div>
+                            <p style={{fontSize: '0.7rem', color: '#999', marginTop: '7px'}}>
+                                * 수리 항목 변경은 예약 취소 후 다시 진행해 주세요.
+                            </p>
                         </div>
+
                         <div style={{display: 'flex', justifyContent: 'flex-end', gap: '10px'}}>
                             <button onClick={handleUpdateReservation} style={{
                                 padding: '10px 20px',
@@ -1090,7 +1090,6 @@ const MyPage = () => {
                     </div>
                 </div>
             )}
-
             {/* 7. 커스텀 알림 모달 */}
             {alertConfig.show && (
                 <AuthAlertModal

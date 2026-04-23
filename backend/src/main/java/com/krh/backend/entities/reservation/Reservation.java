@@ -17,7 +17,7 @@ public class Reservation {
     private String partnerId;     // 업체 고유 식별자 (카카오 API ID)
     private String partnerName;   // 업체명 (UI 표시용)
     private String category;      // 수리 카테고리 (일반, 고장, 사고)
-    private String description;   // 사고 경위 또는 고장 상세 증상
+//    private String description;   // 사고 경위 또는 고장 상세 증상
     private LocalDateTime reservedAt; // 사용자가 선택한 실제 예약 일시
     private String status;        // 예약 상태 (PENDING, CONFIRMED, COMPLETED, CANCELED)
     private LocalDateTime createdAt;  // 예약 신청 시간 (기본 NOW())

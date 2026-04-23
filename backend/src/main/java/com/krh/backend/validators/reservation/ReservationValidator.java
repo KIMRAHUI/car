@@ -14,8 +14,9 @@ public class ReservationValidator {
                 request.getCategory() != null &&
                 request.getSelectedDate() != null &&
                 request.getSelectedTime() != null &&
-                // 수리 항목이나 설명 둘 중 하나는 반드시 존재해야 함
-                ((request.getItems() != null && !request.getItems().isEmpty()) ||
-                        (request.getDescription() != null && !request.getDescription().isEmpty()));
+                // [수정] description 속성을 제거했으므로, 이제 선택된 수리 항목(Items)은 반드시 존재해야 함
+                (request.getItems() != null && !request.getItems().isEmpty());
+        /* || (request.getDescription() != null && !request.getDescription().isEmpty())
+         */
     }
 }

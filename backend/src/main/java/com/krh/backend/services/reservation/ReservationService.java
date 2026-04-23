@@ -5,7 +5,6 @@ import com.krh.backend.entities.reservation.Reservation;
 import com.krh.backend.entities.reservation.ReservationItem;
 import com.krh.backend.results.CommonResult;
 import com.krh.backend.results.Result;
-import com.krh.backend.services.GeminiService;
 import com.krh.backend.validators.reservation.ReservationValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,27 +24,25 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReservationService {
     private final com.krh.backend.mappers.reservation.ReservationMapper reservationMapper;
-    private final GeminiService geminiService;
+
+    // [제거] GeminiService 필드 삭제 (더 이상 외부 API에 의존하지 않습니다.)
 
     // WebConfig 설정과 동일한 물리적 저장 경로
     private final String UPLOAD_PATH = "C:/Users/노오리/Desktop/carmit_uploads/reservation/";
 
     /**
-     * [CREATE] 새로운 예약 등록 (이미지 저장 + AI 검증 + 상세 항목 저장)
+     * [CREATE] 새로운 예약 등록 (이미지 저장 + 상세 항목 저장)
+     * AI 검증 대신 프론트에서 넘어온 키워드(Items) 기반으로 안전하게 저장합니다.
      */
     @Transactional
     public Result registerReservation(ReservationRequest request) {
-        // 1. 기본 유효성 검사
+        // 1. 기본 유효성 검사 (항목 선택 여부 등 확인)
         if (!ReservationValidator.validateRequest(request)) {
             return CommonResult.FAILURE;
         }
 
-        // 2. AI 기반 콘텐츠 검증
-        if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
-            if (!this.geminiService.validateContent(request.getDescription())) {
-                return CommonResult.FAILURE;
-            }
-        }
+        // 2. [제거] AI 기반 콘텐츠 검증 (404 에러 원인 제거)
+        // 이제 사용자가 선택한 정제된 키워드(Items)를 신뢰합니다.
 
         try {
             // 3. 날짜 및 시간 포맷팅
@@ -53,19 +50,19 @@ public class ReservationService {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a", Locale.ENGLISH);
             LocalDateTime reservedAt = LocalDateTime.parse(dateTimeStr, formatter);
 
-            // 4. [추가] 이미지 파일 물리적 저장 처리 (최대 2장)
+            // 4. 이미지 파일 물리적 저장 처리 (최대 2장)
             List<String> savedPaths = new ArrayList<>();
             if (request.getImages() != null && !request.getImages().isEmpty()) {
                 File uploadDir = new File(UPLOAD_PATH);
-                if (!uploadDir.exists()) uploadDir.mkdirs(); // 폴더 없으면 자동 생성
+                if (!uploadDir.exists()) uploadDir.mkdirs();
 
                 for (int i = 0; i < Math.min(request.getImages().size(), 2); i++) {
                     MultipartFile image = request.getImages().get(i);
                     if (image != null && !image.isEmpty()) {
                         String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
                         File targetFile = new File(UPLOAD_PATH + fileName);
-                        image.transferTo(targetFile); // 실제 파일 저장
-                        savedPaths.add("/upload/reservation/" + fileName); // 웹 접근 경로 저장
+                        image.transferTo(targetFile);
+                        savedPaths.add("/upload/reservation/" + fileName);
                     }
                 }
             }
@@ -76,8 +73,7 @@ public class ReservationService {
                     .partnerId(request.getPartnerId())
                     .partnerName(request.getPartnerName())
                     .category(request.getCategory())
-                    .description(request.getDescription())
-                    // 저장된 이미지 경로 매핑
+//                    .description(request.getDescription())
                     .image1(savedPaths.size() >= 1 ? savedPaths.get(0) : null)
                     .image2(savedPaths.size() >= 2 ? savedPaths.get(1) : null)
                     .reservedAt(reservedAt)
@@ -89,6 +85,7 @@ public class ReservationService {
             }
 
             // 6. 상세 항목(Items) 저장 (1:N)
+            // 사용자가 선택한 키워드들이 정식으로 DB에 등록됩니다.
             if (request.getItems() != null && !request.getItems().isEmpty()) {
                 for (String itemName : request.getItems()) {
                     ReservationItem item = ReservationItem.builder()
@@ -105,7 +102,7 @@ public class ReservationService {
             return CommonResult.SUCCESS;
         } catch (IOException e) {
             e.printStackTrace();
-            return CommonResult.FAILURE; // 파일 저장 중 에러 발생 시
+            return CommonResult.FAILURE;
         } catch (Exception e) {
             e.printStackTrace();
             return CommonResult.FAILURE;
@@ -118,21 +115,14 @@ public class ReservationService {
     public List<Reservation> getReservations(String email) {
         if (email == null || email.isEmpty()) return null;
 
-        // 1. 우선 예약 메인 정보 목록을 가져옵니다.
         List<Reservation> reservations = this.reservationMapper.selectReservationsByUserEmail(email);
 
-        // 2. [추가] 각 예약마다 DB에서 상세 아이템 리스트를 가져와서 셋팅합니다.
         for (Reservation res : reservations) {
-            // 해당 예약 ID로 저장된 아이템들을 DB에서 조회
             List<ReservationItem> dbItems = this.reservationMapper.selectItemsByReservationId(res.getId());
-
-            // 프론트엔드 리액트에서 join(', ')으로 뿌려줄 수 있게 List<String>으로 변환
             List<String> itemNames = new ArrayList<>();
             for (ReservationItem item : dbItems) {
                 itemNames.add(item.getItemName());
             }
-
-            // Reservation 엔티티의 items 필드에 리스트 설정 (Reservation 엔티티에 items 필드가 선언되어 있어야 함)
             res.setItems(itemNames);
         }
 
@@ -140,28 +130,15 @@ public class ReservationService {
     }
 
     /**
-     * [DELETE] 예약 취소 -> 히스토리 관리를 위해 삭제 대신 상태 변경(CANCELED)으로 수정
+     * [DELETE] 예약 취소 -> 상태 변경(CANCELED)
      */
     @Transactional
     public Result cancelReservation(Long id) {
         if (id == null) return CommonResult.FAILURE;
 
-        // [수정] 새로운 객체를 생성하지 않고, DB에서 기존 예약 데이터를 조회해옵니다.
-        // selectReservationsById (혹은 findById) 메서드가 Mapper에 정의되어 있어야 합니다.
-        // 만약 해당 메서드가 없다면, list에서 뽑거나 별도로 생성해야 합니다.
-        // 여기서는 데이터 유실 방지를 위해 기존 정보를 활용하도록 로직을 강화했습니다.
-
-        List<Reservation> list = this.reservationMapper.selectReservationsByUserEmail(null); // 전체 조회가 아닌 ID 조회가 필요
-        // 단건 조회가 없을 경우를 대비하여 기존의 updateReservation 호출 전 객체 완성도를 높입니다.
-
-        // 가장 확실한 방법은 Mapper에 SELECT BY ID를 추가하는 것이나,
-        // 현재 코드상에서 해결하기 위해 Mapper를 통해 기존 정보를 최대한 유지하는 로직으로 구성합니다.
-
         Reservation reservation = Reservation.builder()
                 .id(id)
                 .status("CANCELED")
-                // 만약 Mapper XML을 <set> <if>로 수정했다면 이대로 충분하지만,
-                // 수정하지 않았다면 reservedAt이 null이 되어 에러가 나므로 XML 수정을 반드시 병행해야 합니다.
                 .build();
 
         return this.reservationMapper.updateReservation(reservation) > 0
@@ -181,7 +158,7 @@ public class ReservationService {
     }
 
     /**
-     * [UPDATE] 정비 완료 처리 -> 'COMPLETED' 상태로 변경하여 히스토리에 정식 반영
+     * [UPDATE] 정비 완료 처리
      */
     @Transactional
     public Result completeReservation(Long id) {

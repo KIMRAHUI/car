@@ -11,7 +11,7 @@
             `partner_id`,
             `partner_name`,
             `category`,
-            `description`,
+#             `description`,
             `image_1`,
             `image_2`,
             `reserved_at`
@@ -40,8 +40,7 @@
         INSERT INTO `car`.`reservation_items` (
         `reservation_id`, `item_name`
         ) VALUES
-        <foreach collection="list" item="item" separator=",">
-            (#{item.reservationId}, #{item.itemName})
+        <foreach collection="items" item="item" separator=","> (#{item.reservationId}, #{item.itemName})
         </foreach>
     </insert>
 
@@ -68,7 +67,7 @@
                r.`partner_id`   AS `partnerId`,
                r.`partner_name` AS `partnerName`,
                r.`category`,
-               r.`description`,
+#                r.`description`,
                r.`image_1`      AS `image1`,
                r.`image_2`      AS `image2`,
                r.`reserved_at`  AS `reservedAt`,
@@ -96,7 +95,7 @@
         UPDATE `car`.`reservations`
         <set>
             <if test="reservedAt != null">`reserved_at` = #{reservedAt},</if>
-            <if test="description != null">`description` = #{description},</if>
+<!--            <if test="description != null">`description` = #{description},</if>-->
             <if test="status != null">`status` = #{status}</if>
         </set>
         WHERE `id` = #{id}

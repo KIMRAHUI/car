@@ -151,10 +151,8 @@ const CarSVGSelector = ({ selectedParts, onPartClick }) => {
 };
 
 const ReservationModal = ({ partner, onClose, userEmail }) => {
-    // [추가] 이미지 파일 선택을 위한 Ref
     const fileInputRef = useRef(null);
 
-    // 공통 알럿 상태 설정
     const [alertConfig, setAlertConfig] = useState({
         show: false,
         title: '',
@@ -162,13 +160,9 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
         onConfirm: null
     });
 
-    // [추가 조치] 현재 실제 로그인된 사용자 정보를 다시 확인하기 위한 상태
     const [currentUser, setCurrentUser] = useState(null);
-
-    // [추가] 업로드할 이미지 상태 (최대 2장)
     const [uploadImages, setUploadImages] = useState([]);
 
-    // 컴포넌트 마운트 시 세션 정보 확인
     useEffect(() => {
         const fetchCurrentSession = async () => {
             try {
@@ -187,7 +181,6 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
         setAlertConfig({ show: true, title, message, onConfirm });
     };
 
-    // 오늘 날짜를 yyyy-mm-dd 형식으로 추출하는 헬퍼 함수
     const getTodayString = () => {
         const today = new Date();
         const year = today.getFullYear();
@@ -250,17 +243,15 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
 
     const [selectedGeneralItems, setSelectedGeneralItems] = useState([]);
     const [selectedParts, setSelectedParts] = useState([]);
+    const [selectedAccidentKeywords, setSelectedAccidentKeywords] = useState([]); // 사고 키워드 6개용
     const [accidentDesc, setAccidentDesc] = useState('');
 
-    // 추가된 상태: 고장 수리용
-    const [repairType, setRepairType] = useState('엔진/출력 저하');
+    const [selectedRepairKeywords, setSelectedRepairKeywords] = useState([]); // 고장 키워드 6개용
     const [repairDesc, setRepairDesc] = useState('');
 
-    // 초기 날짜를 오늘 날짜로 자동 설정
     const [selectedDate, setSelectedDate] = useState(getTodayString());
     const [selectedTime, setSelectedTime] = useState('11:30 AM');
 
-    // [추가] 이미지 선택 핸들러
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         if (uploadImages.length + files.length > 2) {
@@ -277,7 +268,6 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
         });
     };
 
-    // [추가] 이미지 삭제 핸들러
     const removeImage = (index) => {
         setUploadImages(prev => prev.filter((_, i) => i !== index));
     };
@@ -294,10 +284,20 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
         );
     };
 
-    /**
-     * [개선] 서버 전송 핸들러
-     * 수정: '일반' 점검일 때는 이미지를 전송하지 않도록 조건 추가
-     */
+    // [추가] 사고 키워드 토글
+    const toggleAccidentKeyword = (word) => {
+        setSelectedAccidentKeywords(prev =>
+            prev.includes(word) ? prev.filter(w => w !== word) : [...prev, word]
+        );
+    };
+
+    // [추가] 고장 키워드 토글
+    const toggleRepairKeyword = (word) => {
+        setSelectedRepairKeywords(prev =>
+            prev.includes(word) ? prev.filter(w => w !== word) : [...prev, word]
+        );
+    };
+
     const handleSubmit = async () => {
         const finalEmail = currentUser?.email || userEmail;
 
@@ -308,10 +308,10 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
 
         let finalItems = [];
         if (category === '일반') finalItems = selectedGeneralItems;
-        else if (category === '사고') finalItems = selectedParts;
-        else if (category === '고장') finalItems = [repairType];
+        else if (category === '사고') finalItems = [...selectedParts, ...selectedAccidentKeywords];
+        else if (category === '고장') finalItems = selectedRepairKeywords;
 
-        if (finalItems.length === 0 && category !== '고장') {
+        if (finalItems.length === 0) {
             showAlert("선택 필요", "항목을 하나 이상 선택해 주세요.");
             return;
         }
@@ -327,7 +327,6 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
         formData.append('selectedDate', selectedDate);
         formData.append('selectedTime', selectedTime);
 
-        // [수정] 일반 점검이 아닐 때만, 그리고 실제 업로드된 이미지가 있을 때만 추가
         if (category !== '일반' && uploadImages.length > 0) {
             uploadImages.forEach((imgObj) => {
                 formData.append(`images`, imgObj.file);
@@ -341,11 +340,8 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
 
             if (response.data.result === 'success') {
                 setStep(5);
-            } else if (response.data.result === 'failure') {
-                showAlert(
-                    "예약 불가",
-                    "입력하신 내용에 부적절한 표현(비속어/광고)이 포함되어 있습니다. 내용을 다시 확인해 주세요."
-                );
+            } else {
+                showAlert("오류", "예약 처리 중 문제가 발생했습니다.");
             }
         } catch (error) {
             console.error("Reservation Submit Error:", error);
@@ -390,33 +386,14 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                                             <span className="rating-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1A1A1A' }}>
                                                 ★ {finalRating}
                                             </span>
-                                            <span style={{ cursor: 'help', fontSize: '0.8rem', color: '#ccc' }} title="포털 리뷰 지수 및 플랫폼 데이터를 종합한 Carmit 전용 평점입니다.">ⓘ</span>
+                                            <span style={{ cursor: 'help', fontSize: '0.8rem', color: '#ccc' }} title="전용 평점입니다.">ⓘ</span>
                                         </div>
                                         <div style={{ fontSize: '0.65rem', color: '#888', fontWeight: '500' }}>Carmmit 통합 신뢰 지수</div>
                                     </div>
                                 </div>
 
-                                <div style={{
-                                    width: '100%',
-                                    height: '180px',
-                                    backgroundColor: '#f2f2f2',
-                                    borderRadius: '8px',
-                                    overflow: 'hidden',
-                                    margin: '10px 0',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <img
-                                        src={theme.banner}
-                                        alt="partner banner"
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'contain',
-                                            padding: '10px'
-                                        }}
-                                    />
+                                <div style={{ width: '100%', height: '180px', backgroundColor: '#f2f2f2', borderRadius: '8px', overflow: 'hidden', margin: '10px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <img src={theme.banner} alt="banner" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '10px' }} />
                                 </div>
                                 <div className="location-text" style={{fontSize: '0.8rem', color: '#666', marginBottom: '10px'}}>{partner.address_name}</div>
                                 <div className="tab-menu">
@@ -453,7 +430,6 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                             <div className="step-container step-2">
                                 <h3 style={{marginBottom:'40px'}}>카테고리를 선택해주세요</h3>
                                 <div className="cat-list">
-                                    {/* [수정] 카테고리 선택 시 마다 이미지 상태를 초기화하여 혼선 방지 */}
                                     <button className="cat-btn" onClick={() => {setCategory('일반'); setUploadImages([]); setStep(3);}}>
                                         <img src={wrenchIcon} alt="w" /> 일반 점검 및 소모품 교체
                                     </button>
@@ -492,12 +468,23 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
 
                                 {category === '사고' && (
                                     <div className="accident-select">
-                                        <h3 style={{fontSize:'1rem'}}>파손 부위 선택 및 사진을 등록해주세요</h3>
+                                        <h3 style={{fontSize:'1rem'}}>파손 부위 및 상세 상태를 선택해주세요</h3>
                                         <div className="car-svg-area" style={{ background: '#f9f9f9', borderRadius: '8px', marginBottom: '10px', padding: '15px' }}>
                                             <CarSVGSelector selectedParts={selectedParts} onPartClick={togglePart} />
                                         </div>
-                                        <div className="tag-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '30px', marginBottom:'10px' }}>
-                                            {selectedParts.map(p => <span key={p} className="tag" style={{background:'#eee', padding:'2px 8px', borderRadius:'12px', fontSize:'0.75rem'}}>#{p}</span>)}
+
+                                        <p style={{fontWeight:800, fontSize:'0.8rem', textAlign:'left', margin:'10px 0'}}>상세 상태 (키워드 선택)</p>
+                                        <div className="keyword-grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'15px'}}>
+                                            {['단순 긁힘/스크래치', '찌그러짐/덴트', '도색 벗겨짐', '부품 깨짐/파손', '프레임 변형', '유리 금감/파손'].map(word => (
+                                                <button
+                                                    key={word}
+                                                    className={`keyword-btn ${selectedAccidentKeywords.includes(word) ? 'active' : ''}`}
+                                                    onClick={() => toggleAccidentKeyword(word)}
+                                                    style={{padding:'8px', fontSize:'0.75rem', border:'1px solid #ddd', borderRadius:'4px', background: selectedAccidentKeywords.includes(word) ? '#000' : '#fff', color: selectedAccidentKeywords.includes(word) ? '#fff' : '#000'}}
+                                                >
+                                                    {word}
+                                                </button>
+                                            ))}
                                         </div>
 
                                         <div className="image-upload-wrapper" style={{display:'flex', gap:'10px', marginBottom:'10px'}}>
@@ -513,29 +500,33 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                                             <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleImageChange} accept="image/*" multiple />
                                         </div>
 
-                                        <textarea
-                                            placeholder="사고 경위를 입력해주세요. (예: 주차장 기둥에 긁힘)"
-                                            className="desc-area"
-                                            style={{width:'100%', height:'80px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}
-                                            value={accidentDesc}
-                                            onChange={(e) => setAccidentDesc(e.target.value)}
-                                        ></textarea>
-                                        <button className="next-btn-gray" onClick={() => setStep(4)} style={{marginTop:'20px'}}>일시 선택하기</button>
+                                        {/*textarea<*/}
+                                        {/*    placeholder="사고 경위를 자유롭게 입력해주세요."*/}
+                                        {/*    className="desc-area"*/}
+                                        {/*    style={{width:'100%', height:'60px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}*/}
+                                        {/*    value={accidentDesc}*/}
+                                        {/*    onChange={(e) => setAccidentDesc(e.target.value)}*/}
+                                        {/*></textarea>*/}
+                                        <button className="next-btn-gray" onClick={() => setStep(4)} style={{marginTop:'15px'}}>일시 선택하기</button>
                                     </div>
                                 )}
 
                                 {category === '고장' && (
                                     <div className="fix-input">
-                                        <h3 style={{fontSize:'1rem'}}>상세 증상 선택 및 사진을 등록해주세요</h3>
-                                        <select
-                                            value={repairType}
-                                            onChange={(e) => setRepairType(e.target.value)}
-                                            style={{width:'100%', padding:'10px', marginBottom:'15px', border: '1px solid #ddd'}}
-                                        >
-                                            <option>엔진/출력 저하</option>
-                                            <option>소음/진동 발생</option>
-                                            <option>경고등 점등</option>
-                                        </select>
+                                        <h3 style={{fontSize:'1rem'}}>고장 증상을 선택하고 사진을 등록해주세요</h3>
+
+                                        <div className="keyword-grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'20px'}}>
+                                            {['시동 불량/지연', '이상 소음 발생', '비정상적 진동', '계기판 경고등', '출력 저하/가속 안됨', '냉각수/오일 누유'].map(word => (
+                                                <button
+                                                    key={word}
+                                                    className={`keyword-btn ${selectedRepairKeywords.includes(word) ? 'active' : ''}`}
+                                                    onClick={() => toggleRepairKeyword(word)}
+                                                    style={{padding:'10px', fontSize:'0.75rem', border:'1px solid #ddd', borderRadius:'4px', background: selectedRepairKeywords.includes(word) ? '#000' : '#fff', color: selectedRepairKeywords.includes(word) ? '#fff' : '#000'}}
+                                                >
+                                                    {word}
+                                                </button>
+                                            ))}
+                                        </div>
 
                                         <div className="image-upload-wrapper" style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
                                             {uploadImages.map((img, idx) => (
@@ -550,12 +541,12 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                                             <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleImageChange} accept="image/*" multiple />
                                         </div>
 
-                                        <textarea
-                                            placeholder="상세 증상을 입력해주세요."
-                                            value={repairDesc}
-                                            onChange={(e) => setRepairDesc(e.target.value)}
-                                            style={{width:'100%', height:'120px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}
-                                        ></textarea>
+                                        {/*<textarea*/}
+                                        {/*    placeholder="상세 증상을 입력해주세요."*/}
+                                        {/*    value={repairDesc}*/}
+                                        {/*    onChange={(e) => setRepairDesc(e.target.value)}*/}
+                                        {/*    style={{width:'100%', height:'80px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}*/}
+                                        {/*></textarea>*/}
                                         <button className="next-btn-gray" onClick={() => setStep(4)} style={{marginTop:'20px'}}>일시 선택하기</button>
                                     </div>
                                 )}
@@ -566,7 +557,7 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                             <div className="step-container step-4">
                                 <CustomCalendar
                                     year={2026}
-                                    month={3} // 0부터 시작하므로 3은 4월
+                                    month={3}
                                     selectedDate={selectedDate}
                                     onDateClick={(date) => setSelectedDate(date)}
                                     isModal={true}
@@ -584,13 +575,13 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                         {step === 5 && (
                             <div className="step-container step-5" style={{paddingTop:0}}>
                                 <img src={completeImage} alt="complete" style={{width:'100%', marginBottom:'20px'}} />
-                                <h2 style={{fontSize:'1.1rem', marginBottom: '10px'}}>{selectedDate} am {selectedTime} 예약 완료되었습니다.</h2>
+                                <h2 style={{fontSize:'1.1rem', marginBottom: '10px'}}>{selectedDate} {selectedTime} 예약 완료되었습니다.</h2>
                                 <p className="guide-msg" style={{fontSize: '0.75rem', color: '#666', marginBottom: '20px', lineHeight: '1.5'}}>
                                     "*간혹 매장 사정에 따라 실시간 영업 상태가 반영되지 않을 수 있습니다.<br/>
-                                    원활한 점검을 위해 예약 시간 전 업체에서 드리는 확인 연락을 꼭 받아주세요."
+                                    원활한 점검을 위해 확인 연락을 꼭 받아주세요."
                                 </p>
                                 <div className="final-info" style={{textAlign:'left', background: '#f5f5f5', padding: '15px', borderRadius: '4px'}}>
-                                    <p style={{margin:'0 0 5px 0'}}><strong>{partner.address_name} {partner.place_name}</strong></p>
+                                    <p style={{margin:'0 0 5px 0'}}><strong>{partner.place_name}</strong></p>
                                     <p style={{margin:'0', fontSize:'0.8rem', color: '#555'}}>{partner.phone || "0507-0000-0000"}</p>
                                 </div>
                                 <button className="next-btn-gray" onClick={onClose} style={{marginTop: '20px'}}>확인</button>
@@ -600,7 +591,6 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                 </div>
             </div>
 
-            {/* 공통 스타일 알럿 모달 배치 */}
             {alertConfig.show && (
                 <AuthAlertModal
                     title={alertConfig.title}
