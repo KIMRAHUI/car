@@ -156,4 +156,25 @@
         WHERE `model_id` = #{modelId}
     </select>
 
+    <select id="selectAllMaintenanceStatus" resultType="com.krh.backend.dtos.MaintenanceResponse">
+        SELECT
+            mi.`category`          AS `category`,
+            mi.`item_name`         AS `itemName`,
+            mi.`replace_interval`  AS `replaceInterval`,
+            /* 정합성을 위해 가장 최근 정비 날짜의 mileage를 가져오도록 설계하는 것이 좋지만,
+               간단하게는 정비 이력 중 가장 높은 mileage를 가져오는 현재 방식도 무방합니다. */
+            MAX(rv.`mileage`)      AS `lastServiceMileage`,
+            /* 날짜 포맷을 'yyyy-MM-dd' 형태로 변환해서 가져오면 자바 서비스에서 처리가 더 쉽습니다. */
+            DATE_FORMAT(MAX(rv.`created_at`), '%Y-%m-%d') AS `lastServiceDate`
+        FROM `car`.`maintenance_items` mi
+                 LEFT JOIN `car`.`reservation_items` ri ON mi.`id` = ri.`item_id`
+                 LEFT JOIN `car`.`reservations` res ON ri.`reservation_id` = res.`id`
+            AND res.`user_email` = #{email}
+            AND res.`status` = 'COMPLETED'
+                 LEFT JOIN `car`.`reviews` rv ON res.`id` = rv.`reservation_id`
+        WHERE mi.`is_active` = TRUE
+        GROUP BY mi.`id`, mi.`category`, mi.`item_name`, mi.`replace_interval`
+        ORDER BY mi.`id` ASC
+    </select>
+
 </mapper>

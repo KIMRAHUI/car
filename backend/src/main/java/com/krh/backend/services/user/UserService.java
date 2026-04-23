@@ -1,5 +1,6 @@
 package com.krh.backend.services.user;
 
+import com.krh.backend.dtos.MaintenanceResponse;
 import com.krh.backend.entities.user.EmailTokenEntity;
 import com.krh.backend.entities.user.UserEntity;
 import com.krh.backend.mappers.user.UserMapper;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +27,66 @@ public class UserService {
     private final UserMapper userMapper;
     private final MailService mailService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    /**
+     * [READ] 마이페이지 정비 기록 및 소모품 상태 데이터 계산 로직
+     * 개선사항:
+     * 1. DB 마스터 테이블(maintenance_items)에서 모든 항목을 동적으로 가져옵니다.
+     * 2. '외장 및 수리' 카테고리(주기 999,999)는 정비 이력이 있는 경우에만 리스트에 노출합니다.
+     * 3. 일반 소모품은 이력이 없더라도 관리 목적으로 항상 노출합니다.
+     */
+    public List<MaintenanceResponse> getMaintenanceStatus(String email) {
+        UserEntity user = this.userMapper.selectByEmail(email);
+        if (user == null) return new ArrayList<>();
+
+        // 1. DB에서 마스터 항목 기반으로 마지막 정비 이력을 싹 긁어옵니다. (38개 내외 항목)
+        List<MaintenanceResponse> allItems = this.userMapper.selectAllMaintenanceStatus(email);
+        List<MaintenanceResponse> filteredResponses = new ArrayList<>();
+
+        for (MaintenanceResponse item : allItems) {
+            // 주행거리 기반 계산 정보 추출
+            int lastMileage = (item.getLastServiceMileage() != null) ? item.getLastServiceMileage() : 0;
+            // DB에서 가져온 개별 항목의 교체 주기 (replaceInterval)
+            int interval = (item.getReplaceInterval() != null) ? item.getReplaceInterval() : 10000;
+
+            // --- [핵심 개선] 필터링 로직 ---
+            // 교체 주기가 999,999인 항목(사고/외장/고장 수리)은 정비 이력이 전혀 없을 경우 슬라이드에서 제외합니다.
+            if (interval >= 999999 && item.getLastServiceDate() == null) {
+                continue;
+            }
+
+            // --- [핵심 개선] 데이터 계산 및 가공 ---
+            int nextMileage = lastMileage + interval;
+            int remaining = nextMileage - user.getMileage();
+
+            // 진행률 계산 (0 ~ 100%)
+            int spent = user.getMileage() - lastMileage;
+            int progress = (int) Math.min(100, Math.max(0, ((double) spent / interval) * 100));
+
+            // 상태(Status) 판별 로직
+            String status = "정상";
+            if (remaining <= 0) {
+                status = "위험"; // 교체 주기 도달 또는 초과
+            } else if (remaining <= (interval * 0.2)) {
+                status = "주의"; // 남은 거리가 주기 대비 20% 이하일 때 (80% 지점 도달)
+            }
+
+            // DTO 완성
+            item.setNextServiceMileage(nextMileage);
+            item.setRemainingMileage(remaining);
+            item.setMaintenanceProgress(progress);
+            item.setStatus(status);
+
+            // 날짜 가독성 처리
+            if (item.getLastServiceDate() == null) {
+                item.setLastServiceDate("기록 없음");
+            }
+
+            filteredResponses.add(item);
+        }
+
+        return filteredResponses;
+    }
 
     /**
      * [인증-1] 이메일 인증 번호 발송
@@ -124,7 +186,6 @@ public class UserService {
     @Transactional
     public Pair<Result, UserEntity> register(UserEntity user) {
         if (!UserValidator.validateRegister(user)) {
-//            System.out.println("로그: 유효성 검사(Validator)에서 실패함");
             return Pair.of(CommonResult.FAILURE, null);
         }
 
@@ -132,9 +193,7 @@ public class UserService {
             return Pair.of(UserResult.DUPLICATE_EMAIL, null);
         }
 
-        // 보안: 회원가입 시 전달된 carModelId가 유효한지 검증
         if (user.getCarModelId() != null && this.userMapper.countModelById(user.getCarModelId()) == 0) {
-//            System.out.println("로그: DB에 carModelId 69번이 존재하지 않음");
             return Pair.of(CommonResult.FAILURE, null);
         }
 
@@ -190,14 +249,12 @@ public class UserService {
             return Pair.of(UserResult.USER_NOT_FOUND, null);
         }
 
-        // 비밀번호 검증
         if (currentPassword == null || !BCrypt.checkpw(currentPassword, dbUser.getPassword())) {
             return Pair.of(UserResult.WRONG_PASSWORD, null);
         }
 
-        // [보안 핵심] 차량 모델 ID 유효성 검사 (악의적 조작 방지)
         if (user.getCarModelId() != null && this.userMapper.countModelById(user.getCarModelId()) == 0) {
-            return Pair.of(CommonResult.FAILURE, null); // 가짜 ID 전송 시 차단
+            return Pair.of(CommonResult.FAILURE, null);
         }
 
         if (user.getPhone() != null) {
@@ -255,7 +312,6 @@ public class UserService {
      */
     @Transactional
     public Result updateVehicleOnly(String email, int carModelId, String carNumber) {
-        // 1. 모델 ID 존재 여부 검증 (보안)
         if (this.userMapper.countModelById(carModelId) == 0) {
             return CommonResult.FAILURE;
         }
@@ -263,7 +319,6 @@ public class UserService {
         UserEntity user = this.userMapper.selectByEmail(email);
         if (user == null) return UserResult.USER_NOT_FOUND;
 
-        // 2. 정보 업데이트
         user.setCarModelId(carModelId);
         user.setCarNumber(carNumber);
 
@@ -272,15 +327,12 @@ public class UserService {
 
     /**
      * [UPDATE] 프로필 이미지만 즉시 수정 (마이페이지 직접 클릭 전용)
-     * 비밀번호 검증 절차를 생략하고 이미지 경로만 업데이트합니다.
      */
     @Transactional
     public Result updateProfileImageOnly(UserEntity user) {
         if (user == null || user.getEmail() == null) {
             return CommonResult.FAILURE;
         }
-        // 기존 updateUserInfo 매퍼는 모든 필드를 덮어쓰므로 그대로 사용 가능합니다.
-        // 단, 호출 전 Controller에서 비밀번호 필드 등이 오염되지 않았는지 확인이 필요합니다.
         return this.userMapper.updateUserInfo(user) > 0 ? CommonResult.SUCCESS : CommonResult.FAILURE;
     }
 }

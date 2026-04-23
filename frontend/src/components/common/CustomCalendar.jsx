@@ -37,6 +37,7 @@ const CustomCalendar = ({
 
     const days = [];
 
+    // [수정] 빈 공간 렌더링 시 키값에 index 추가
     for (let i = 0; i < firstDay; i++) {
         days.push(<div key={`empty-${i}`} className="day empty"></div>);
     }
@@ -61,7 +62,7 @@ const CustomCalendar = ({
 
         days.push(
             <div
-                key={d}
+                key={`day-${year}-${month + 1}-${d}`} // [수정] 날짜별 고유 키값 생성
                 className={`day ${isSelected || dayReservations.length > 0 ? 'active-day' : ''} ${isPast ? 'disabled-day' : ''}`}
                 onClick={() => {
                     if (!isPast && onDateClick) onDateClick(dateStr);
@@ -75,7 +76,6 @@ const CustomCalendar = ({
                     justifyContent: 'center',
                     position: 'relative',
                     minHeight: '40px',
-                    // 일요일은 붉은색, 토요일은 파란색 계열로 텍스트 색상만 살짝 변경 (선택 시 제외)
                     color: isSelected ? '#FFF' : (dayOfWeek === 0 ? '#ff4d4f' : dayOfWeek === 6 ? '#1890ff' : 'inherit'),
                     ...(isModal && isSelected ? { background: '#1A1A1A', color: '#FFF', borderRadius: '4px' } : {})
                 }}
@@ -99,7 +99,7 @@ const CustomCalendar = ({
                         <div className="res-tooltip">
                             <div className="tooltip-title">{d}일 예약 내역</div>
                             {dayReservations.map((res, idx) => (
-                                <div key={idx} className="tooltip-item">
+                                <div key={`res-tip-${res.id || idx}`} className="tooltip-item">
                                     <span className="tooltip-time">
                                         {new Date(res.reservedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
@@ -150,8 +150,9 @@ const CustomCalendar = ({
                     gap: '5px'
                 }}
             >
+                {/* [핵심 수정] 요일 이름 배열 매핑 시 인덱스를 사용하여 중복 키(S, T) 해결 */}
                 {['S','M','T','W','T','F','S'].map((name, idx) => (
-                    <div key={name} className="day-name" style={{
+                    <div key={`weekday-${idx}`} className="day-name" style={{
                         fontWeight: 800,
                         color: idx === 0 ? '#ff4d4f' : idx === 6 ? '#1890ff' : '#999',
                         textAlign: 'center',

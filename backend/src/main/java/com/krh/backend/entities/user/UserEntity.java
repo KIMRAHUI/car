@@ -26,7 +26,7 @@ public class UserEntity {
     private String carNumber;
     private String fuelType;
     private int mileage;
-    private String annualMileage;
+    private Integer annualMileage;
     private String drivingEnv;
 
     private LocalDateTime createdAt;
@@ -38,15 +38,13 @@ public class UserEntity {
     private String modelName;
     private String brandName;
 
-    /**
-     * [수정] Jackson이 이 필드를 JSON으로 변환하지 않도록 설정합니다.
+    /*
+     * Jackson이 이 필드를 JSON으로 변환하지 않도록 설정
      * 이를 통해 NoSuchFileException 및 서버 연결 코드 0 에러를 방지합니다.
      */
     @JsonIgnore
     private MultipartFile profileImageFile;
 
-    /**
-     * [추가] 실제 DB에 저장될 프로필 이미지의 웹 경로 (String)
-     */
+    /*실제 DB에 저장될 프로필 이미지의 웹 경로 (String)*/
     private String profileImage;
 }

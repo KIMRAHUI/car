@@ -27,6 +27,14 @@ public interface ReservationMapper {
     int insertReservationItem(ReservationItem item);
 
     /**
+     * [CREATE] 예약 상세 수리 항목 다중 저장 (Batch Insert) - 추가됨
+     * - 서비스 레이어에서 리스트를 넘겨받아 쿼리 한 번으로 여러 항목을 삽입합니다.
+     * @param items 상세 항목 리스트
+     * @return 영향받은 행의 수
+     */
+    int insertReservationItems(List<ReservationItem> items);
+
+    /**
      * [READ] 사용자별 예약 목록 조회
      * - 마이페이지의 Reservation 및 History 탭에 출력될 데이터를 조회합니다.
      * - 개선사항: XML 조인을 통해 해당 예약과 연관된 리뷰 ID 및 당시 기록된 주행거리(recordedMileage)를 함께 가져옵니다.
@@ -42,6 +50,15 @@ public interface ReservationMapper {
      * @return 상세 항목 리스트
      */
     List<ReservationItem> selectItemsByReservationId(@Param("reservationId") Long reservationId);
+
+    /**
+     * [READ] 특정 항목의 가장 최근 정비 완료 이력 조회 - 추가됨
+     * - 마이페이지 다음 점검/교체 주기를 계산하기 위해 사용합니다.
+     * @param userEmail 사용자 이메일
+     * @param itemName 소모품 항목명 (예: '엔진오일')
+     * @return 가장 최근의 완료된 예약 정보 (주행거리 포함)
+     */
+    Reservation selectLatestFinishedItem(@Param("userEmail") String userEmail, @Param("itemName") String itemName);
 
     /**
      * [UPDATE] 예약 정보 및 상태 수정

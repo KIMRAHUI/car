@@ -1,6 +1,7 @@
 package com.krh.backend.controllers.mypage;
 
 import com.krh.backend.controllers.CommonController;
+import com.krh.backend.dtos.MaintenanceResponse;
 import com.krh.backend.entities.user.UserEntity;
 import com.krh.backend.results.CommonResult;
 import com.krh.backend.results.Result;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,6 +45,27 @@ public class MyPageController extends CommonController {
         // CommonController의 로직을 사용하여 결과 생성 후 user 객체 추가
         Map<String, Object> response = this.resolveResult(CommonResult.SUCCESS);
         response.put("user", user);
+
+        return response;
+    }
+
+    /**
+     * [추가] 다음 점검 및 교체 현황 조회
+     * - UserService에서 계산된 소모품별 교체 주기 데이터를 리스트로 반환합니다.
+     */
+    @GetMapping(value = "/maintenance", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object> getMaintenanceStatus(HttpSession session) {
+        UserEntity sessionUser = (UserEntity) session.getAttribute("sessionUser");
+
+        if (sessionUser == null) {
+            return this.resolveResult(CommonResult.FAILURE);
+        }
+
+        // 서비스 호출을 통해 계산된 리스트 가져오기
+        List<MaintenanceResponse> maintenanceList = this.userService.getMaintenanceStatus(sessionUser.getEmail());
+
+        Map<String, Object> response = this.resolveResult(CommonResult.SUCCESS);
+        response.put("maintenance", maintenanceList);
 
         return response;
     }
@@ -94,13 +117,6 @@ public class MyPageController extends CommonController {
         // 현재 비밀번호(currentPassword)가 넘어오지 않은 경우는 '이미지만 즉시 변경'하는 상황임
         if (currentPassword == null || currentPassword.trim().isEmpty()) {
             // 비밀번호 검증 없이 이미지 경로만 업데이트하도록 기존 서비스 로직 대신 개별 업데이트 로직 태움
-            // 기존 updateUserInfo 메서드 대신 profileImage만 업데이트하는 별도 로직이 필요하거나
-            // 서비스에서 null 체크를 통해 이미지 정보를 반영해줘야 합니다.
-            // 여기서는 currentUser에 이미 profileImage가 세팅되었으므로,
-            // 비밀번호 확인 절차를 생략하고 바로 성공 처리를 위한 서비스 메서드를 호출하거나 updateUserInfo 내부 수정을 가정합니다.
-
-            // 만약 userService에 이미지만 업데이트하는 전용 메서드가 없다면
-            // pair 처리를 모방하여 성공 응답을 내려줍니다.
             Result imageUpdateResult = this.userService.updateProfileImageOnly(currentUser);
             if (imageUpdateResult == CommonResult.SUCCESS) {
                 session.setAttribute("sessionUser", currentUser);

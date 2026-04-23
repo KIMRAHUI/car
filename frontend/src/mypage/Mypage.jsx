@@ -50,6 +50,16 @@ const MyPage = () => {
     const [editingReservation, setEditingReservation] = useState(null);
     //리뷰 모달에 넘겨줄 데이터를 저장할 바구니
     const [selectedHistory, setSelectedHistory] = useState(null);
+
+    // [개선] 백엔드에서 계산된 점검/교체 데이터를 저장할 상태
+    const [maintenanceData, setMaintenanceData] = useState([]);
+
+    // [신규] 정비 입력 폼 및 슬라이드 인덱스 상태
+    const [currentItemIndex, setCurrentItemIndex] = useState(0);
+    const [formDate, setFormDate] = useState("");
+    const [formMileage, setFormMileage] = useState("");
+
+
     // 좌측 탭 상태
     const [leftTab, setLeftTab] = useState('account');
 
@@ -124,6 +134,81 @@ const MyPage = () => {
     };
 
     /**
+     * [개선] 주행거리 기반 소모품 점검/교체 데이터 조회 함수
+     */
+    const fetchMaintenanceData = () => {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.result === "success") {
+                        setMaintenanceData(data.maintenance);
+                    }
+                } catch (e) {
+                    console.error("Maintenance Parsing Error:", e);
+                }
+            }
+        };
+        xhr.open('GET', '/mypage/maintenance');
+        xhr.withCredentials = true;
+        xhr.send();
+    };
+
+    /**
+     * [개선] 정비 기록 업데이트 핸들러 (날짜/거리 통합 유효성 검증)
+     */
+    const handleMaintenanceUpdate = () => {
+        const item = maintenanceData[currentItemIndex];
+        const inputMileage = parseInt(formMileage);
+        const inputDate = new Date(formDate);
+        const today = new Date();
+
+        // 1. 공백 체크
+        if (!formDate || !formMileage) {
+            showAlert("입력 오류", "정비 날짜와 주행거리를 모두 입력해주세요.");
+            return;
+        }
+
+        // 2. 미래 날짜 체크
+        if (inputDate > today) {
+            showAlert("날짜 오류", "미래의 날짜는 정비 기록으로 등록할 수 없습니다.");
+            return;
+        }
+
+        // 3. 현재 차량 누적 주행거리 초과 체크
+        if (inputMileage > user.mileage) {
+            showAlert("거리 오류", `입력 거리가 현재 차량 총 주행거리(${user.mileage.toLocaleString()}km)보다 클 수 없습니다.`);
+            return;
+        }
+
+        // 4. 이전 기록보다 낮은지 체크 (데이터 정합성)
+        if (item.lastServiceMileage && inputMileage < item.lastServiceMileage) {
+            showAlert("거리 오류", `이전 기록(${item.lastServiceMileage.toLocaleString()}km)보다 낮은 거리는 입력할 수 없습니다.`);
+            return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                showAlert("저장 완료", `${item.itemName} 정비 기록이 업데이트 되었습니다.`);
+                setFormDate("");
+                setFormMileage("");
+                fetchMaintenanceData(); // 화면 갱신
+            }
+        };
+        xhr.open('POST', '/mypage/maintenance/manual');
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.withCredentials = true;
+        xhr.send(JSON.stringify({
+            email: user.email,
+            itemName: item.itemName,
+            lastDate: formDate,
+            lastMileage: inputMileage
+        }));
+    };
+
+    /**
      * [개선] 마이페이지 사용자 정보 조회 함수화
      * 재사용이 가능하도록 useEffect 외부로 분리하였습니다.
      */
@@ -140,8 +225,9 @@ const MyPage = () => {
                 if (data.result === "success") {
                     setIsLoggedIn(true);
                     setUser(data.user);
-                    // 유저 정보 로드 성공 시 예약 목록도 함께 가져옴
+                    // 유저 정보 로드 성공 시 부가 데이터 로드
                     fetchReservations(data.user.email);
+                    fetchMaintenanceData(); // [추가] 점검 데이터 동시 로드
                 } else {
                     setIsLoggedIn(false);
                 }
@@ -416,7 +502,7 @@ const MyPage = () => {
                                 className={`tab-btn ${leftTab === 'check' ? 'active-check' : ''}`}
                                 onClick={() => setLeftTab('check')}
                             >
-                                다음 점검
+                                정비 기록 입력
                             </button>
 
                             <button
@@ -430,26 +516,11 @@ const MyPage = () => {
 
                         <div className={`tab-content left-content-${leftTab}`}>
 
-                            {/* ACCOUNT 탭 콘텐츠 영역 */}
+                            {/* ACCOUNT 탭 콘텐츠 영역 (하드코딩 제거 및 실제 데이터 연동) */}
                             {leftTab === 'account' && (
                                 <div className="account-info">
 
                                     <div className="info-header">
-                                        {/* [수정] 이 위치의 고정 아이콘을 후기 이미지로 변경 */}
-                                        {/*<div className="info-car-icon-container">*/}
-                                        {/*    <img*/}
-                                        {/*        src={headerCarImage}*/}
-                                        {/*        alt="Latest Repair"*/}
-                                        {/*        className="info-car-icon"*/}
-                                        {/*        style={{*/}
-                                        {/*            width: '50px',       // 적절한 크기로 조절*/}
-                                        {/*            height: '50px',*/}
-                                        {/*            objectFit: 'cover',  // 비율 유지*/}
-                                        {/*            borderRadius: '4px'  // 살짝 둥글게*/}
-                                        {/*        }}*/}
-                                        {/*    />*/}
-                                        {/*</div>*/}
-
                                         <h3>
                                             {user?.brandName || "브랜드 정보 없음"} {user?.modelName ? `(${user.modelName})` : ""} / {user?.name}
                                         </h3>
@@ -464,38 +535,146 @@ const MyPage = () => {
                                     <p>{user?.phone || "연락처 정보 없음"}</p>
                                     <p>{user?.email}</p>
 
-                                    <p>최근 점검 : 2026-02-05</p>
-                                    <p>타이어교체 : 2026-02-05</p>
+                                    {/* [수정] 하드코딩된 날짜 대신 History 기반 최근 정비 날짜 출력 */}
+                                    <p>최근 정비 : {latestComplete ? new Date(latestComplete.reservedAt).toLocaleDateString() : "이력 없음"}</p>
+                                    <p>누적 주행거리 : {user?.mileage?.toLocaleString() || 0} km</p>
                                 </div>
                             )}
 
 
-                            {/* 다음 점검 */}
                             {leftTab === 'check' && (
-                                <div className="check-info">
+                                <div className="check-info-slider">
+                                    <div className="slider-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                        <h3 style={{ margin: 0 }}>정비 기록 입력</h3>
+                                        <span className="item-counter" style={{ fontSize: '0.85rem', color: '#888', fontWeight: 'bold' }}>
+                {currentItemIndex + 1} / {maintenanceData.length}
+            </span>
+                                    </div>
 
-                                    <h3>성능 및 안전 (Performance)</h3>
+                                    {maintenanceData.length > 0 ? (
+                                        <div className="slider-item-card" style={{ border: '1px solid #eee', padding: '20px', borderRadius: '12px', background: '#fff' }}>
+                                            {/* 상단 항목 정보 패널 */}
+                                            <div className="item-status-summary" style={{ marginBottom: '20px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', borderLeft: '4px solid #000' }}>
+                    <span className="category-badge" style={{ background: '#e0e0e0', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem' }}>
+                        {maintenanceData[currentItemIndex].category}
+                    </span>
+                                                <h4 style={{ fontSize: '1.1rem', margin: '8px 0' }}>{maintenanceData[currentItemIndex].itemName}</h4>
+                                                <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                    현재 상태: <span style={{
+                                                    fontWeight: 'bold',
+                                                    color: maintenanceData[currentItemIndex].status === '정상' ? '#2ecc71' : (maintenanceData[currentItemIndex].status === '주의' ? '#f1c40f' : '#e74c3c')
+                                                }}>{maintenanceData[currentItemIndex].status}</span>
+                                                </p>
+                                            </div>
 
-                                    <p>배터리 전압 : 2026-01-10 / 상태: 정상 (12.6V)</p>
-                                    <p>와이퍼 블레이드 : 2026-02-01 / 상태: 양호</p>
-                                    <p>브레이크 액 : 2024-12-05 / 다음 점검: 2026-12-05</p>
-                                    <p>냉각수 (부동액) : 2025-11-20 / 상태: 정상</p>
+                                            {/* [개선] 조건부 렌더링: 정상 상태일 때는 캡션 노출 및 입력 차단 */}
+                                            {maintenanceData[currentItemIndex].status === '정상' ? (
+                                                <div className="status-caption-box" style={{
+                                                    padding: '30px 10px',
+                                                    textAlign: 'center',
+                                                    background: '#f8f9fa',
+                                                    borderRadius: '8px',
+                                                    border: '1px dashed #ccc'
+                                                }}>
+                                                    <p style={{ fontSize: '0.9rem', color: '#555', lineHeight: '1.5', margin: 0 }}>
+                                                        ✅ 현재 이 항목은 <strong>정상 상태</strong>입니다.<br/>
+                                                        추가 정비 기록은 상태가 '주의'로 변경된 후에<br/>
+                                                        입력하실 수 있습니다.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="manual-input-form">
+                                                    <div style={{ marginBottom: '12px' }}>
+                                                        <label style={{ display: 'block', fontSize: '0.75rem', color: '#888', marginBottom: '4px' }}>마지막 정비 날짜</label>
+                                                        <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }} max={new Date().toISOString().split("T")[0]} />
+                                                    </div>
+                                                    <div style={{ marginBottom: '20px' }}>
+                                                        <label style={{ display: 'block', fontSize: '0.75rem', color: '#888', marginBottom: '4px' }}>정비 당시 주행거리 (km)</label>
+                                                        <input type="number" value={formMileage} placeholder="숫자만 입력" onChange={(e) => setFormMileage(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }} />
+                                                    </div>
+                                                    <button onClick={handleMaintenanceUpdate} style={{ width: '100%', padding: '12px', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>기록 저장</button>
+                                                </div>
+                                            )}
 
+                                            {/* 슬라이드 컨트롤러 */}
+                                            <div className="slider-controls" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px', gap: '10px' }}>
+                                                <button disabled={currentItemIndex === 0} onClick={() => { setCurrentItemIndex(prev => prev - 1); setFormDate(""); setFormMileage(""); }} style={{ flex: 1, padding: '10px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: currentItemIndex === 0 ? 0.3 : 1 }}>이전</button>
+                                                <button disabled={currentItemIndex === maintenanceData.length - 1} onClick={() => { setCurrentItemIndex(prev => prev + 1); setFormDate(""); setFormMileage(""); }} style={{ flex: 1, padding: '10px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: currentItemIndex === maintenanceData.length - 1 ? 0.3 : 1 }}>다음</button>
+                                            </div>
+                                        </div>
+                                    ) : <p className="no-data">데이터를 로드 중입니다...</p>}
                                 </div>
                             )}
 
 
-                            {/* 다음 교체 */}
+                            {/* 다음 교체 (그래프 논리 및 UX 개선) */}
                             {leftTab === 'replace' && (
                                 <div className="replace-info">
-
                                     <h3>필수 소모품 (Essential)</h3>
 
-                                    <p>엔진오일 교체 : 2026-02-05 / 다음 교체: 15,000km</p>
-                                    <p>브레이크 패드 : 2025-11-20 / 상태: 양호</p>
-                                    <p>에어컨 필터 : 2025-08-15 / 점검 필요</p>
-                                    <p>브레이크 오일 : 2024-05-22 / 교체 권장</p>
+                                    {maintenanceData.length === 0 ? (
+                                        <p className="no-data">교체 데이터가 없습니다.</p>
+                                    ) : (
+                                        maintenanceData.map((item, index) => {
+                                            const isNoData = item.lastServiceDate === "기록 없음";
+                                            const isBrandNew = !isNoData && item.maintenanceProgress === 0;
 
+                                            return (
+                                                <div key={index} className="replace-item-card" style={{
+                                                    marginBottom: '25px',
+                                                    opacity: isNoData ? 0.6 : 1 // 데이터 없으면 약간 흐리게
+                                                }}>
+                                                    <div className="replace-item-info" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span className="item-name" style={{ fontWeight: 'bold' }}>
+                                {item.itemName} {isBrandNew && "✨"}
+                            </span>
+                                                        <span className="item-percent" style={{
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: 'bold',
+                                                            color: isNoData ? '#ccc' : (isBrandNew ? '#2ecc71' : '#333')
+                                                        }}>
+                                {isNoData ? "미등록" : `${item.maintenanceProgress}%`}
+                            </span>
+                                                    </div>
+
+                                                    {/* 프로그레스 바: 데이터 없음(점선 회색) vs 신규교체(초록색 5%) vs 진행중(진행색) */}
+                                                    <div className="progress-container" style={{
+                                                        width: '100%',
+                                                        height: '12px',
+                                                        backgroundColor: '#f0f0f0',
+                                                        borderRadius: '6px',
+                                                        overflow: 'hidden',
+                                                        marginBottom: '6px',
+                                                        border: isNoData ? '1px dashed #ccc' : 'none'
+                                                    }}>
+                                                        <div className="progress-fill" style={{
+                                                            // 0%일 때 아주 살짝이라도 색을 보여줘서 활성화 상태임을 표시 (5%)
+                                                            width: isNoData ? '0%' : (isBrandNew ? '5%' : `${item.maintenanceProgress}%`),
+                                                            height: '100%',
+                                                            backgroundColor: isNoData ? 'transparent' : (isBrandNew ? '#2ecc71' : (item.status === '정상' ? '#2ecc71' : (item.status === '주의' ? '#f1c40f' : '#e74c3c'))),
+                                                            transition: 'width 0.5s ease-in-out'
+                                                        }}></div>
+                                                    </div>
+
+                                                    <div className="replace-item-footer" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#888' }}>
+                                                        {/* 최근 정비 정보 */}
+                                                        <span>
+                                {isNoData
+                                    ? "위 탭에서 정비 이력을 등록해주세요"
+                                    : `최근: ${item.lastServiceMileage?.toLocaleString()} km`}
+                            </span>
+
+                                                        {/* 기준 주기 또는 남은 거리 정보 */}
+                                                        <span style={{ color: isBrandNew ? '#2ecc71' : '#888', fontWeight: isBrandNew ? 'bold' : 'normal' }}>
+                                {isNoData
+                                    ? `기준: ${item.replaceInterval?.toLocaleString()}km`
+                                    : (isBrandNew ? "최상의 상태입니다!" : `남은 거리: ${item.remainingMileage?.toLocaleString()} km`)}
+                            </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
                                 </div>
                             )}
 
@@ -587,7 +766,7 @@ const MyPage = () => {
                                                                     />
                                                                 )}
 
-                                                                {/* image2가 있을 때만 렌더링 */}
+                                                                {/* image2이 있을 때만 렌더링 */}
                                                                 {res.image2 && (
                                                                     <img
                                                                         src={`${SERVER_URL}${res.image2}`}
