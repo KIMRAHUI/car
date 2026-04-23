@@ -47,6 +47,27 @@ const MyPage = () => {
 
     // [추가] 예약 목록 및 수정 데이터 상태
     const [reservations, setReservations] = useState([]);
+
+    const statusReservations = (reservations || [])
+        .filter(r => r.status === 'PENDING' || r.status === 'APPROVED')
+        .sort((a, b) => new Date(b.reservedAt) - new Date(a.reservedAt))
+        .slice(0, 5);
+
+    const completedHistory = (reservations || [])
+        .filter(r => r.status === 'COMPLETED')
+        .sort((a, b) => new Date(b.reservedAt) - new Date(a.reservedAt))
+        .slice(0, 5);
+
+    const canceledReservations = (reservations || [])
+        .filter(r => r.status === 'CANCELED')
+        .sort((a, b) => new Date(b.reservedAt) - new Date(a.reservedAt))
+        .slice(0, 5);
+
+    const latestComplete = completedHistory.length > 0 ? completedHistory[0] : null;
+
+    const headerCarImage = latestComplete && latestComplete.image1
+        ? `http://localhost:8080${latestComplete.image1}`
+        : carImage;
     const [editingReservation, setEditingReservation] = useState(null);
     //리뷰 모달에 넘겨줄 데이터를 저장할 바구니
     const [selectedHistory, setSelectedHistory] = useState(null);
@@ -56,6 +77,8 @@ const MyPage = () => {
 
     // [신규] 정비 입력 폼 및 슬라이드 인덱스 상태
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
+    // 상단 useState 모여있는 곳에 추가
+    const [resSlideIndex, setResSlideIndex] = useState(0);
     const [formDate, setFormDate] = useState("");
     const [formMileage, setFormMileage] = useState("");
 
@@ -388,16 +411,8 @@ const MyPage = () => {
         xhr.send();
     };
 
-    // 1. 전체 예약 중 'COMPLETED'(정비 완료) 상태인 것만 골라냅니다.
-    const completedHistory = reservations.filter(r => r.status === 'COMPLETED');
 
-// 2. 가장 최근 완료된 건(배열의 첫 번째)을 가져옵니다.
-    const latestComplete = completedHistory.length > 0 ? completedHistory[0] : null;
 
-// 3. 사진이 있으면 서버 경로를 붙이고, 없으면 기본 carImage를 사용합니다.
-    const headerCarImage = latestComplete && latestComplete.image1
-        ? `${SERVER_URL}${latestComplete.image1}`
-        : carImage;
 
 
     // 비로그인 상태 화면
@@ -685,271 +700,198 @@ const MyPage = () => {
 
                 {/* 우측 패널 */}
                 <section className="right-panel">
-
                     <div className="tabs right-tabs">
-
+                        {/* 탭 버튼 3개로 확장 */}
                         <button
-                            className={`tab-btn right-tab-btn ${rightTab === 'reservation' ? 'active' : ''}`}
-                            onClick={() => setRightTab('reservation')}
+                            className={`tab-btn right-tab-btn ${rightTab === 'status' ? 'active' : ''}`}
+                            onClick={() => setRightTab('status')}
                         >
-                            Reservation
+                            예약 현황
                         </button>
-
                         <button
                             className={`tab-btn right-tab-btn ${rightTab === 'history' ? 'active' : ''}`}
                             onClick={() => setRightTab('history')}
                         >
-                            History
+                            정비 완료
                         </button>
-
+                        <button
+                            className={`tab-btn right-tab-btn ${rightTab === 'cancel' ? 'active' : ''}`}
+                            onClick={() => setRightTab('cancel')}
+                        >
+                            취소 내역
+                        </button>
                     </div>
 
                     <div className="right-content">
-
-                        {/* 예약 */}
-                        {rightTab === 'reservation' && (
+                        {/* 1. 예약 현황 탭 (statusReservations 사용) */}
+                        {/* 1. 예약 현황 탭 */}
+                        {rightTab === 'status' && (
                             <div className="reservation-section">
-
-                                {/* [개선] 캘린더 영역: 단일 정보 대신 reservations 배열 전체를 전달 */}
-                                <div className="calendar-mock" style={{marginBottom: '30px'}}>
-                                    <CustomCalendar
-                                        // 현재 뷰 기준: 예약이 있다면 첫 번째 예약 날짜, 없다면 오늘 날짜
-                                        selectedDate={null}
-                                        onDateClick={null}
-
-                                        // [수정] 중요: reservations 배열 전체를 전달하여
-                                        // 달력 내부에서 모든 예약 날짜에 빨간 점을 찍을 수 있게 함
-                                        reservations={reservations}
-
-                                        isModal={false}
-                                    />
+                                <div className="calendar-mock" style={{ marginBottom: '25px' }}>
+                                    <CustomCalendar reservations={reservations} isModal={false} />
                                 </div>
 
-                                {/* [개선] 하단 목록 영역: 예약 데이터에 따라 메시지 또는 리스트 출력 */}
-                                {reservations.length === 0 ? (
-                                    <div className="no-reservation-info"
-                                         style={{padding: '50px 0', textAlign: 'center', borderTop: '1px solid #eee'}}>
-                                        현재 예약된 내역이 없습니다.
+                                {statusReservations.length === 0 ? (
+                                    <div className="no-reservation-info" style={{ padding: '40px 0', textAlign: 'center', borderTop: '1px solid #eee', color: '#999' }}>
+                                        현재 진행 중인 예약이 없습니다.
                                     </div>
                                 ) : (
-                                    <div className="reservation-list"
-                                         style={{borderTop: '1px solid #eee', paddingTop: '20px'}}>
-                                        {reservations.map((res) => (
-                                            <div key={res.id} className="res-item-container" style={{
-                                                marginBottom: '40px',
-                                                borderBottom: '1px solid #eee',
-                                                paddingBottom: '20px'
-                                            }}>
-                                                {/* 예약 상세 */}
-                                                <div className="reservation-detail">
-                                                    <h4 className="res-shop-name">{res.partnerName}</h4>
-                                                    <p className="shop-phone">상태: {res.status}</p>
+                                    <div className="reservation-slider-container" style={{ borderTop: '1px solid #eee', paddingTop: '20px' }}>
+                                        {/* 카드 상단: 현재 순서 표시 */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>예약 내역 확인</span>
+                                            <span style={{ fontSize: '0.75rem', color: '#888' }}>{resSlideIndex + 1} / {statusReservations.length}</span>
+                                        </div>
 
+                                        {/* 현재 인덱스의 예약 카드 1장만 출력 */}
+                                        <div className="res-item-container" style={{
+                                            padding: '20px',
+                                            background: '#f9f9f9',
+                                            borderRadius: '12px',
+                                            minHeight: '200px',
+                                            border: '1px solid #eee'
+                                        }}>
+                                            <div className="reservation-detail">
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                                    <h4 style={{ margin: 0, color: '#000' }}>{statusReservations[resSlideIndex].partnerName}</h4>
+                                                    <span style={{ fontSize: '0.7rem', background: '#000', color: '#fff', padding: '2px 8px', borderRadius: '4px' }}>
+                                {statusReservations[resSlideIndex].status}
+                            </span>
+                                                </div>
 
-                                                    <div className="repair-images">
-                                                        {res.category !== '일반' && (
-                                                            <div style={{display: 'flex', gap: '10px'}}>
-                                                                {/* image1이 있을 때만 렌더링 */}
-                                                                {res.image1 && (
-                                                                    <img
-                                                                        src={`${SERVER_URL}${res.image1}`}
-                                                                        alt="repair1"
-                                                                        style={{
-                                                                            borderRadius: '4px',
-                                                                            objectFit: 'cover',
-                                                                            width: '100px',
-                                                                            height: '100px'
-                                                                        }}
-                                                                        onError={(e) => {
-                                                                            e.target.style.display = 'none';
-                                                                        }}
-                                                                    />
-                                                                )}
+                                                <div className="repair-desc" style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                                    <p style={{ margin: '5px 0' }}><strong>일시 :</strong> {new Date(statusReservations[resSlideIndex].reservedAt).toLocaleString('ko-KR')}</p>
+                                                    <p style={{ margin: '5px 0' }}><strong>분류 :</strong> {statusReservations[resSlideIndex].category}</p>
+                                                    <p style={{ margin: '5px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        <strong>항목 :</strong> {statusReservations[resSlideIndex].items?.join(', ') || "선택 없음"}
+                                                    </p>
+                                                </div>
 
-                                                                {/* image2이 있을 때만 렌더링 */}
-                                                                {res.image2 && (
-                                                                    <img
-                                                                        src={`${SERVER_URL}${res.image2}`}
-                                                                        alt="repair2"
-                                                                        style={{
-                                                                            borderRadius: '4px',
-                                                                            objectFit: 'cover',
-                                                                            width: '100px',
-                                                                            height: '100px'
-                                                                        }}
-                                                                        onError={(e) => {
-                                                                            e.target.style.display = 'none';
-                                                                        }}
-                                                                    />
-                                                                )}
-
-                                                                {/* 사고/고장 수리인데 사진을 안 올렸을 경우만 텍스트 표시 (원치 않으시면 이 부분도 삭제 가능) */}
-                                                                {!res.image1 && !res.image2 && (
-                                                                    <p style={{fontSize: '0.8rem', color: '#ccc'}}>첨부된
-                                                                        사진이 없습니다.</p>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="repair-desc">
-                                                        <p>분류 : {res.category}</p>
-
-                                                        <p className="item-ellipsis" title={res.items?.join(', ')}>
-                                                            항목 : {res.items && res.items.length > 0
-                                                            ? res.items.join(', ')  // ['엔진오일', '타이어'] -> "엔진오일, 타이어"
-                                                            : "선택된 항목이 없습니다."}
-                                                        </p>
-
-                                                        <p>일시 : {new Date(res.reservedAt).toLocaleString('ko-KR')}</p>
-                                                    </div>
-                                                    <div className="res-actions">
-                                                        <button onClick={() => handleCancelReservation(res.id)}>예약 취소
-                                                        </button>
-                                                        <button onClick={() => {
-                                                            setEditingReservation({...res});
-                                                            setActiveModal('resEdit');
-                                                        }}>예약 변경
-                                                        </button>
-                                                    </div>
+                                                <div className="res-actions" style={{ marginTop: '15px', display: 'flex', gap: '8px' }}>
+                                                    <button
+                                                        onClick={() => handleCancelReservation(statusReservations[resSlideIndex].id)}
+                                                        style={{ flex: 1, padding: '8px', background: '#fff', border: '1px solid #ddd', cursor: 'pointer', fontSize: '0.8rem' }}
+                                                    >
+                                                        예약 취소
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setEditingReservation({...statusReservations[resSlideIndex]}); setActiveModal('resEdit'); }}
+                                                        style={{ flex: 1, padding: '8px', background: '#000', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}
+                                                    >
+                                                        일정 변경
+                                                    </button>
                                                 </div>
                                             </div>
-                                        ))}
+                                        </div>
+
+                                        {/* 슬라이드 컨트롤 버튼 */}
+                                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '15px' }}>
+                                            <button
+                                                disabled={resSlideIndex === 0}
+                                                onClick={() => setResSlideIndex(prev => prev - 1)}
+                                                style={{ padding: '5px 15px', background: '#eee', border: 'none', borderRadius: '4px', cursor: resSlideIndex === 0 ? 'default' : 'pointer', opacity: resSlideIndex === 0 ? 0.4 : 1 }}
+                                            >
+                                                이전
+                                            </button>
+                                            <button
+                                                disabled={resSlideIndex === statusReservations.length - 1}
+                                                onClick={() => setResSlideIndex(prev => prev + 1)}
+                                                style={{ padding: '5px 15px', background: '#eee', border: 'none', borderRadius: '4px', cursor: resSlideIndex === statusReservations.length - 1 ? 'default' : 'pointer', opacity: resSlideIndex === statusReservations.length - 1 ? 0.4 : 1 }}
+                                            >
+                                                다음
+                                            </button>
+                                        </div>
+
+                                        <p style={{ fontSize: '0.7rem', color: '#bbb', textAlign: 'center', marginTop: '15px' }}>
+                                            * 최대 5건의 예약까지 화살표로 넘겨보실 수 있습니다.
+                                        </p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-
-                        {/* 히스토리 (History) 섹션: status가 'COMPLETED'인 데이터만 출력 */}
+                        {/* 2. 정비 완료 탭 (completedHistory 사용) */}
                         {rightTab === 'history' && (
                             <div className="history-section">
                                 <div className="history-list">
-                                    {reservations.filter(r => r.status === 'COMPLETED').length === 0 ? (
-                                        <div className="no-history-info"
-                                             style={{padding: '50px 0', textAlign: 'center', color: '#999'}}>
+                                    {completedHistory.length === 0 ? (
+                                        <div className="no-history-info" style={{padding: '50px 0', textAlign: 'center', color: '#999'}}>
                                             완료된 정비 이력이 없습니다.
                                         </div>
                                     ) : (
-                                        reservations
-                                            .filter(r => r.status === 'COMPLETED')
-                                            .map((his) => (
-                                                <div key={his.id} className="history-card-wrapper">
-                                                    <div className="history-card">
-                                                        <div className="history-header">
-                                                            <div className="date-badge">
-                                                                {/* 서버 날짜 데이터(reservedAt)를 연.월 / 일로 분리 */}
-                                                                <span className="year-month">
-                                            {new Date(his.reservedAt).getFullYear()}.{String(new Date(his.reservedAt).getMonth() + 1).padStart(2, '0')}
-                                        </span>
-                                                                <span className="day-strong">
-                                            {String(new Date(his.reservedAt).getDate()).padStart(2, '0')}
-                                        </span>
-                                                            </div>
-                                                            <div className="header-info-main">
-                                                                <div className="tag-row">
-                                                                    <span className="tag-type">{his.category}</span>
-                                                                    {/* ★ 리뷰 존재 여부(his.reviewId)에 따른 버튼 분기 처리 */}
-                                                                    {!his.reviewId ? (
-                                                                        <button className="btn-review" onClick={() => {
-                                                                            setSelectedHistory(his);
-                                                                            setActiveModal('review');
-                                                                        }}>
-                                                                            후기 작성
-                                                                        </button>
-                                                                    ) : (
-                                                                        <div className="review-edit-group"
-                                                                             style={{display: 'flex', gap: '5px'}}>
-                                                                            <button className="btn-review-edit"
-                                                                                    onClick={() => {
-                                                                                        setSelectedHistory(his);
-                                                                                        setActiveModal('review');
-                                                                                    }} style={{
-                                                                                background: '#666',
-                                                                                color: '#fff',
-                                                                                border: 'none',
-                                                                                padding: '4px 8px',
-                                                                                borderRadius: '4px',
-                                                                                fontSize: '0.8rem',
-                                                                                cursor: 'pointer'
-                                                                            }}>
-                                                                                후기 수정
-                                                                            </button>
-                                                                            <button className="btn-review-delete"
-                                                                                    onClick={() => handleDeleteReview(his.reviewId)}
-                                                                                    style={{
-                                                                                        background: '#ff4d4d',
-                                                                                        color: '#fff',
-                                                                                        border: 'none',
-                                                                                        padding: '4px 8px',
-                                                                                        borderRadius: '4px',
-                                                                                        fontSize: '0.8rem',
-                                                                                        cursor: 'pointer'
-                                                                                    }}>
-                                                                                후기 삭제
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <h4 className="shop-name">{his.partnerName}</h4>
-                                                            </div>
+                                        completedHistory.map((his) => (
+                                            <div key={his.id} className="history-card-wrapper">
+                                                <div className="history-card">
+                                                    <div className="history-header">
+                                                        <div className="date-badge">
+                                                            <span className="year-month">{new Date(his.reservedAt).getFullYear()}.{String(new Date(his.reservedAt).getMonth() + 1).padStart(2, '0')}</span>
+                                                            <span className="day-strong">{String(new Date(his.reservedAt).getDate()).padStart(2, '0')}</span>
                                                         </div>
-
-                                                        <div className="history-body">
-                                                            <div className="repair-desc">
-                                                                <div className="desc-item">
-                                                                    <span className="label">점검항목</span>
-                                                                    <span className="value" style={{ fontWeight: 'bold', color: '#333' }}>
-        {/* DB에서 가져온 아이템 리스트를 쉼표로 연결 */}
-                                                                        {his.items && his.items.length > 0
-                                                                            ? his.items.join(', ')
-                                                                            : "상세 내역 없음"}
-    </span>
-                                                                </div>
-                                                                <div className="desc-item">
-                                                                    <span className="label">정비상태</span>
-                                                                    <span className="value" style={{
-                                                                        color: '#2ecc71',
-                                                                        fontWeight: 'bold'
-                                                                    }}>정비 완료</span>
-                                                                </div>
+                                                        <div className="header-info-main">
+                                                            <div className="tag-row">
+                                                                <span className="tag-type">{his.category}</span>
+                                                                {!his.reviewId ? (
+                                                                    <button className="btn-review" onClick={() => { setSelectedHistory(his); setActiveModal('review'); }}>후기 작성</button>
+                                                                ) : (
+                                                                    <div className="review-edit-group" style={{display: 'flex', gap: '5px'}}>
+                                                                        <button className="btn-review-edit" onClick={() => { setSelectedHistory(his); setActiveModal('review'); }} style={{ background: '#666', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}>후기 수정</button>
+                                                                        <button className="btn-review-delete" onClick={() => handleDeleteReview(his.reviewId)} style={{ background: '#ff4d4d', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}>후기 삭제</button>
+                                                                    </div>
+                                                                )}
                                                             </div>
-
-                                                            {/* 완료된 정비에 첨부된 사진이 있다면 표시 (선택 사항) */}
-                                                            {(his.image1 || his.image2) && (
-                                                                <div className="history-images" style={{
-                                                                    marginTop: '15px',
-                                                                    display: 'flex',
-                                                                    gap: '10px'
-                                                                }}>
-                                                                    {his.image1 &&
-                                                                        <img src={`${SERVER_URL}${his.image1}`}
-                                                                             alt="history1" style={{
-                                                                            width: '60px',
-                                                                            height: '60px',
-                                                                            borderRadius: '4px',
-                                                                            objectFit: 'cover'
-                                                                        }}/>}
-                                                                    {his.image2 &&
-                                                                        <img src={`${SERVER_URL}${his.image2}`}
-                                                                             alt="history2" style={{
-                                                                            width: '60px',
-                                                                            height: '60px',
-                                                                            borderRadius: '4px',
-                                                                            objectFit: 'cover'
-                                                                        }}/>}
-                                                                </div>
-                                                            )}
+                                                            <h4 className="shop-name">{his.partnerName}</h4>
                                                         </div>
                                                     </div>
-                                                    <div className="history-divider" style={{
-                                                        margin: '20px 0',
-                                                        borderBottom: '1px solid #eee'
-                                                    }}></div>
+                                                    <div className="history-body">
+                                                        <div className="repair-desc">
+                                                            <div className="desc-item">
+                                                                <span className="label">점검항목</span>
+                                                                <span className="value" style={{ fontWeight: 'bold', color: '#333' }}>{his.items?.join(', ') || "상세 내역 없음"}</span>
+                                                            </div>
+                                                            <div className="desc-item">
+                                                                <span className="label">정비상태</span>
+                                                                <span className="value" style={{ color: '#2ecc71', fontWeight: 'bold' }}>정비 완료</span>
+                                                            </div>
+                                                        </div>
+                                                        {(his.image1 || his.image2) && (
+                                                            <div className="history-images" style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                                                                {his.image1 && <img src={`${SERVER_URL}${his.image1}`} alt="h1" style={{ width: '60px', height: '60px', borderRadius: '4px', objectFit: 'cover' }}/>}
+                                                                {his.image2 && <img src={`${SERVER_URL}${his.image2}`} alt="h2" style={{ width: '60px', height: '60px', borderRadius: '4px', objectFit: 'cover' }}/>}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            ))
+                                                <div className="history-divider" style={{ margin: '20px 0', borderBottom: '1px solid #eee' }}></div>
+                                            </div>
+                                        ))
                                     )}
+                                    {completedHistory.length > 0 && <p style={{fontSize: '0.75rem', color: '#bbb', textAlign: 'center'}}>* 최근 5건의 정비 이력만 표시됩니다.</p>}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* 3. 취소 내역 탭 (canceledReservations 사용) */}
+                        {rightTab === 'cancel' && (
+                            <div className="cancel-section">
+                                {canceledReservations.length === 0 ? (
+                                    <div style={{padding: '50px 0', textAlign: 'center', color: '#999'}}>
+                                        취소된 내역이 없습니다.
+                                    </div>
+                                ) : (
+                                    <div className="cancel-list">
+                                        {canceledReservations.map((can) => (
+                                            <div key={can.id} style={{padding: '20px', borderBottom: '1px solid #f5f5f5', color: '#999', marginBottom: '10px'}}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                                    <h4 style={{margin: 0, textDecoration: 'line-through'}}>{can.partnerName}</h4>
+                                                    <span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>CANCELED</span>
+                                                </div>
+                                                <p style={{fontSize: '0.85rem', margin: '8px 0'}}>일시: {new Date(can.reservedAt).toLocaleString()}</p>
+                                                <p style={{fontSize: '0.85rem'}}>항목: {can.items?.join(', ') || "항목 없음"}</p>
+                                            </div>
+                                        ))}
+                                        <p style={{fontSize: '0.75rem', color: '#bbb', textAlign: 'center', marginTop: '20px'}}>* 최근 5건의 취소 내역만 표시됩니다.</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

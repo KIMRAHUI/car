@@ -11,7 +11,6 @@
             `partner_id`,
             `partner_name`,
             `category`,
-#             `description`,
             `image_1`,
             `image_2`,
             `reserved_at`
@@ -20,7 +19,6 @@
                      #{partnerId},
                      #{partnerName},
                      #{category},
-                     #{description},
                      #{image1},
                      #{image2},
                      #{reservedAt}
@@ -67,7 +65,6 @@
                r.`partner_id`   AS `partnerId`,
                r.`partner_name` AS `partnerName`,
                r.`category`,
-#                r.`description`,
                r.`image_1`      AS `image1`,
                r.`image_2`      AS `image2`,
                r.`reserved_at`  AS `reservedAt`,
