@@ -22,22 +22,43 @@ public interface UserMapper {
      */
     int insertUser(@Param(value = "user") UserEntity user);
 
-    // READ : pk(email)기준 유저 정보 1개(혹은 null)반환
+    /**
+     * [READ] pk(email) 기준 유저 정보 조회
+     * @param email 사용자 이메일
+     * @return 유저 정보 1개 또는 null
+     */
     UserEntity selectByEmail(@Param(value = "email") String email);
 
-    // [READ] 소셜 타입(KAKAO/NAVER)과 고유 식별자(socialId)로 유저를 찾는 메서드
+    /**
+     * [READ] 소셜 타입(KAKAO/NAVER)과 고유 식별자(socialId)로 유저를 찾는 메서드
+     * @param socialTypeCode 소셜 로그인 타입
+     * @param socialId 소셜 플랫폼 고유 ID
+     * @return 일치하는 유저 정보
+     */
     UserEntity selectBySocialInfo(@Param(value = "socialTypeCode") String socialTypeCode,
                                   @Param(value = "socialId") String socialId);
+
+    /**
+     * [READ] 주행거리 무결성 체크용 단순 조회
+     * - 후기 작성/수정 시 입력된 km가 기존 기록보다 낮은지 검증하기 위해 사용합니다.
+     * @param email 사용자 이메일
+     * @return 현재 DB에 저장된 누적 주행거리(km)
+     */
+    int selectMileageByEmail(@Param(value = "email") String email);
 
     /**
      * [UPDATE] 사용자 정보 수정
      * - 'email'은 연락처 수단이므로 수정을 허용합니다. (단, 중복 체크 로직 필요)
      * - 'name'은 신원 보장을 위해 수정을 금지
      * - 차량 정보(carModelId, carNumber), 주행 환경 등 가변 데이터 위주 업데이트합니다.
+     * @param user 수정할 데이터가 담긴 유저 객체
      */
     int updateUserInfo(@Param(value = "user") UserEntity user);
 
-    // DELETE
+    /**
+     * [DELETE] 회원 탈퇴 처리
+     * @param email 탈퇴할 사용자 이메일
+     */
     int deleteByUser(@Param(value = "email") String email);
 
     // [이메일 인증 토큰 관련 메서드]

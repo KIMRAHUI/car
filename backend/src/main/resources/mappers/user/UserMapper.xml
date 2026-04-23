@@ -11,8 +11,8 @@
         ) VALUES (
                      #{user.email}, #{user.password}, #{user.name}, #{user.phone},
                      #{user.carModelId}, #{user.carNumber}, #{user.fuelType}, #{user.mileage},
-                     #{user.annualMileage}, #{user.drivingEnv},
-                     #{user.socialTypeCode}, #{user.socialId}, #{user.profileImage}
+                     #{user.annual_mileage}, #{user.driving_env},
+                     #{user.social_type_code}, #{user.social_id}, #{user.profile_image}
                  )
     </insert>
 
@@ -72,6 +72,12 @@
           AND u.`social_id` = #{socialId}
     </select>
 
+    <select id="selectMileageByEmail" resultType="int">
+        SELECT `mileage`
+        FROM `car`.`users`
+        WHERE `email` = #{email}
+    </select>
+
     <insert id="insertEmailToken" parameterType="com.krh.backend.entities.user.EmailTokenEntity">
         INSERT INTO `car`.`email_tokens` (
             `email`, `code`, `salt`, `expires_at`
@@ -127,6 +133,7 @@
         ORDER BY `created_at` DESC
         LIMIT 1
     </select>
+
     <select id="selectAllBrands" resultType="map">
         SELECT `brand_id`   AS `id`,
                `brand_name` AS `name`,
@@ -143,9 +150,10 @@
         ORDER BY `model_name` ASC
     </select>
 
-    <select id="countModelById" resultType="int"> SELECT COUNT(*)
-                                                  FROM `car`.`car_models`
-                                                  WHERE `model_id` = #{modelId}
+    <select id="countModelById" resultType="int">
+        SELECT COUNT(*)
+        FROM `car`.`car_models`
+        WHERE `model_id` = #{modelId}
     </select>
 
 </mapper>

@@ -436,19 +436,19 @@ const MyPage = () => {
 
                                     <div className="info-header">
                                         {/* [수정] 이 위치의 고정 아이콘을 후기 이미지로 변경 */}
-                                        <div className="info-car-icon-container">
-                                            <img
-                                                src={headerCarImage}
-                                                alt="Latest Repair"
-                                                className="info-car-icon"
-                                                style={{
-                                                    width: '50px',       // 적절한 크기로 조절
-                                                    height: '50px',
-                                                    objectFit: 'cover',  // 비율 유지
-                                                    borderRadius: '4px'  // 살짝 둥글게
-                                                }}
-                                            />
-                                        </div>
+                                        {/*<div className="info-car-icon-container">*/}
+                                        {/*    <img*/}
+                                        {/*        src={headerCarImage}*/}
+                                        {/*        alt="Latest Repair"*/}
+                                        {/*        className="info-car-icon"*/}
+                                        {/*        style={{*/}
+                                        {/*            width: '50px',       // 적절한 크기로 조절*/}
+                                        {/*            height: '50px',*/}
+                                        {/*            objectFit: 'cover',  // 비율 유지*/}
+                                        {/*            borderRadius: '4px'  // 살짝 둥글게*/}
+                                        {/*        }}*/}
+                                        {/*    />*/}
+                                        {/*</div>*/}
 
                                         <h3>
                                             {user?.brandName || "브랜드 정보 없음"} {user?.modelName ? `(${user.modelName})` : ""} / {user?.name}
@@ -831,20 +831,21 @@ const MyPage = () => {
                 />
             )}
 
-            {/* 5. 후기 작성 모달 [추가] */}
+            {/* 5. 후기 작성 모달*/}
             {activeModal === 'review' && selectedHistory && (
                 <ReviewModal
                     onClose={() => {
                         setActiveModal(null);
-                        setSelectedHistory(null); // 닫을 때 바구니 비우기
+                        setSelectedHistory(null);
                     }}
-                    reservation={selectedHistory} // ★ 바구니에 담긴 데이터를 모달로 전달 (이래야 루프가 돔)
-                    userEmail={user.email}        // ★ 유저 이메일 전달 (이래야 마일리지가 바뀜)
-                    onSuccess={fetchUserInfo}     // ★ 성공 시 유저 정보 갱신 (이래야 화면이 바뀜)
+                    reservation={selectedHistory}
+                    userEmail={user.email}
+                    onSuccess={fetchUserInfo}
+                    currentTotalKm={user.mileage}
                 />
             )}
 
-            {/* 6. 예약 수정 모달 [추가] */}
+            {/* 6. 예약 수정 모달*/}
             {activeModal === 'resEdit' && editingReservation && (
                 <div className="modal-overlay" style={{
                     position: 'fixed',

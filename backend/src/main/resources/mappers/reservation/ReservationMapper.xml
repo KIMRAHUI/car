@@ -49,8 +49,11 @@
                r.`reserved_at`  AS `reservedAt`,
                r.`status`,
                r.`created_at`   AS `createdAt`,
-               rv.`id`          AS `reviewId`  FROM `car`.`reservations` r
-                                                        LEFT JOIN `car`.`reviews` rv ON r.`id` = rv.`reservation_id` WHERE r.`user_email` = #{userEmail}
+               rv.`id`          AS `reviewId`,
+               rv.`mileage`     AS `recordedMileage` /* 리뷰 작성 시 기록된 당시 주행거리 추가 */
+        FROM `car`.`reservations` r
+                 LEFT JOIN `car`.`reviews` rv ON r.`id` = rv.`reservation_id`
+        WHERE r.`user_email` = #{userEmail}
         ORDER BY r.`reserved_at` DESC
     </select>
 

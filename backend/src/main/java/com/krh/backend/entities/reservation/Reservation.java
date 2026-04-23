@@ -25,4 +25,5 @@ public class Reservation {
     private String image2; // 추가
     private List<String> items;//상세항목
     private Long reviewId; // 해당예약과 연겨로딘 리뷰의 ID 없으면 null[결과전달용]
+    private Integer recordedMileage; // 리뷰 작성 시 저장된 주행거리
 }
