@@ -9,10 +9,15 @@
             `annual_mileage`, `driving_env`,
             `social_type_code`, `social_id`, `profile_image`
         ) VALUES (
-                     #{user.email}, #{user.password}, #{user.name}, #{user.phone},
-                     #{user.carModelId}, #{user.carNumber}, #{user.fuelType}, #{user.mileage},
-                     #{user.annual_mileage}, #{user.driving_env},
-                     #{user.social_type_code}, #{user.social_id}, #{user.profile_image}
+                     #{user.email},
+                     #{user.password},
+                     #{user.name},
+                     #{user.phone},
+                     #{user.carModelId},   #{user.carNumber},
+                     #{user.fuelType},
+                     #{user.mileage},
+                     #{user.annualMileage}, #{user.drivingEnv},    #{user.socialTypeCode}, #{user.socialId},
+                     #{user.profileImage}
                  )
     </insert>
 

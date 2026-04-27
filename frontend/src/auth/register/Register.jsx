@@ -326,10 +326,8 @@ const Register = () => {
                             </div>
                         </div>
                         <div className="step-btn-group">
-                            <div className="right-btns">
-                                <button className="btn-rect-gray" onClick={() => setStep(1)}>이전</button>
-                                <button className="btn-rect-gray" onClick={nextStep}>다음</button>
-                            </div>
+                            <button className="btn-rect-gray" onClick={() => setStep(step - 1)}>이전</button>
+                            <button className="btn-rect-gray" onClick={nextStep}>다음</button>
                         </div>
                     </div>
                 )}
@@ -396,10 +394,8 @@ const Register = () => {
                             </div>
                         </div>
                         <div className="step-btn-group">
-                            <div className="right-btns">
-                                <button className="btn-rect-gray" onClick={() => setStep(2)}>이전</button>
-                                <button className="btn-rect-gray" onClick={nextStep}>다음</button>
-                            </div>
+                            <button className="btn-rect-gray" onClick={() => setStep(step - 1)}>이전</button>
+                            <button className="btn-rect-gray" onClick={nextStep}>다음</button>
                         </div>
                     </div>
                 )}
