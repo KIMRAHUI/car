@@ -77,11 +77,13 @@
     transition: font-size 0.4s ease-in-out;
 }
 
-/* --- Section 2: Reviews (수정 완료) --- */
+/* --- Section 2: Reviews--- */
 .review-section {
     background-color: #f5f5f5;
     flex-direction: column;
     padding: 7.5rem 5rem;
+    /* [보정] 검색 결과 유무에 따른 높이 변화 최소화 */
+    min-height: 80vh;
 }
 
 .review-header {
@@ -129,6 +131,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
+    align-items: stretch;
 }
 
 .card {
@@ -136,6 +139,7 @@
     border-radius: 1.25rem;
     overflow: hidden;
     width: 100%;
+    height: 100%;
     box-shadow: 0 0.625rem 1.875rem rgba(0,0,0,0.05);
     transition: transform 0.3s ease;
     display: flex;
@@ -146,26 +150,25 @@
     transform: translateY(-10px);
 }
 
-/* [보정] 목업 배경 제거 및 이미지 컨테이너 최적화 */
 .card-img-placeholder {
     width: 100%;
     height: 12.5rem;
-    background-color: #e9ecef; /* 이미지가 없을 때의 기본 배경 */
+    background-color: #e9ecef;
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
+    /* [보정] 높이 고정 유지 */
+    flex-shrink: 0;
 }
 
-/* [추가] 실제 이미지 비율 보정 */
 .review-card-img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* 이미지가 찌그러지지 않게 꽉 채움 */
-    object-position: center; /* 중앙 기준 정렬 */
+    object-fit: cover;
+    object-position: center;
 }
 
-/* [추가] 이미지 없을 때 텍스트 스타일 */
 .no-image-text {
     color: #adb5bd;
     font-size: 0.875rem;
@@ -175,6 +178,18 @@
 .card-content {
     padding: 1.5rem;
     flex-grow: 1;
+}
+
+/*결과 없음 문구 출력 시 레이아웃 붕괴 방지 */
+.no-results {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #868e96;
+    font-size: 1.1rem;
 }
 
 .star-rating {
@@ -363,14 +378,19 @@
     transform: scale(1.1);
 }
 
-/* --- Media Queries --- */
-@media (max-width: 1024px) {
+
+/*(max-width: 1024px) */
+@media (max-width: 64rem) {
     .hero-text-wrapper {
         width: 30%;
         padding-left: 1.5rem;
         padding-top: 4rem;
     }
-    .hero-text { font-size: 4rem; }
+
+    .hero-text {
+        font-size: 4rem;
+    }
+
     .hero-text-wrapper::after {
         width: 80vh;
         height: 80vh;
@@ -378,21 +398,57 @@
         top: 50%;
         transform: translate(-50%, -50%);
     }
-    .review-section { padding: 5rem 3rem; }
-    .review-cards { grid-template-columns: repeat(2, 1fr); }
-    .search-bar { min-width: 100%; }
+
+    /* ---리뷰 섹션--- */
+    .review-section {
+        padding: 5rem 3rem;
+        min-height: auto; /* 태블릿은 유동적 높이 허용 */
+    }
+
+    .review-header {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 1.5rem;
+    }
+
+    .review-header div:first-child {
+        width: 100%;
+    }
+
+
+    .search-bar {
+        width: 100%;
+        max-width: 25rem;
+        min-width: unset;
+        align-self: flex-end;
+    }
+
+    .search-bar input {
+        font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+    }
+
+    .search-bar input::placeholder {
+        font-size: clamp(0.85rem, 1.6vw, 1rem);
+    }
+
+    .review-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-@media (max-width: 768px) {
+/* (max-width: 768px) */
+@media (max-width: 48rem) {
     .hero-text-wrapper {
         width: 36.5%;
         padding-left: 1rem;
         padding-top: 3.5rem;
     }
+
     .hero-text {
         font-size: 4rem;
         letter-spacing: 0.02rem;
     }
+
     .hero-text-wrapper::after {
         display: block;
         width: 100vh;
@@ -401,12 +457,54 @@
         top: 50%;
         transform: translate(-50%, -50%);
     }
-    .review-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
-    .review-header h2 { font-size: 1.5rem; margin-bottom: 0.3rem; }
-    .review-header p { font-size: 0.875rem; line-height: 1.4; }
-    .search-bar { width: 100%; min-width: unset; }
-    .review-cards { grid-template-columns: 1fr; }
-    .how-it-works-section { flex-direction: column; padding: 5rem 2rem; gap: 3rem; }
-    .how-title { font-size: 3.5rem; }
-    .floating-chatbot { width: 3.5rem; height: 3.5rem; bottom: 1.5rem; right: 1.5rem; }
+
+    /* --- 리뷰 섹션--- */
+    .review-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        text-align: center;
+    }
+
+    .review-header h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .review-header p {
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+
+    .search-bar {
+        width: 100%;
+        min-width: unset;
+        align-self: center;
+    }
+
+    .search-bar input::placeholder {
+        text-align: center;
+        font-size: clamp(0.8rem, 2.8vw, 0.95rem);
+    }
+
+    .review-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .how-it-works-section {
+        flex-direction: column;
+        padding: 5rem 2rem;
+        gap: 3rem;
+    }
+
+    .how-title {
+        font-size: 3.5rem;
+    }
+
+    .floating-chatbot {
+        width: 3.5rem;
+        height: 3.5rem;
+        bottom: 1.5rem;
+        right: 1.5rem;
+    }
 }

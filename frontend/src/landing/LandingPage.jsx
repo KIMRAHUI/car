@@ -1,40 +1,41 @@
-import React, { useState, useEffect } from 'react'; // useEffect 추가
+import React, { useState, useEffect, useMemo } from 'react'; // useMemo 추가
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // 데이터 조회를 위한 axios 추가
+import axios from 'axios';
 import './LandingPage.css';
 import Header from '../components/header/Header.jsx';
 import landingHeroBg from '../assets/image/landing/landing_hero.png';
 import chatbotImg from '../assets/image/landing/chatbot.png';
 import searchIcon from "../assets/image/landing/search.png";
-import repairImg from '../assets/image/landing/repair.png';
-import tireImg from '../assets/image/landing/tire.png';
-import oilImg from '../assets/image/landing/oil.png';
+import partnerImg from '../assets/image/landing/partner.png';
+import MapImg from '../assets/image/landing/Map.png';
+import quickImg from '../assets/image/landing/quick_reserve.png';
 
 // 탭 메뉴 데이터 (기존 유지)
 const tabData = [
     {
         id: 0,
-        title: 'EXPERT REPAIR',
-        desc: '견적부터 후기까지 한 번에\n비교하세요',
-        imgUrl: repairImg,
+        title: 'FIND PARTNERS',
+        desc: '전국 정비소 위치부터 생생한 후기까지\n내 차를 위한 최적의 파트너를 찾으세요',
+        imgUrl: partnerImg,
     },
     {
         id: 1,
-        title: 'TIRE CARE',
-        desc: '내게 딱 맞는 타이어를,\n선택부터 장착까지 쉽게',
-        imgUrl: tireImg,
+        title: 'SMART ROUTE',
+        desc: '현재 위치에서 정비소까지의\n최적 경로와 예상 소요 시간을 확인하세요',
+        imgUrl: MapImg,
     },
     {
         id: 2,
-        title: 'OIL AUTO-TRACK',
-        desc: '엔진오일 교체 주기를\n자동으로 추적하고 관리하세요',
-        imgUrl: oilImg,
+        title: 'QUICK RESERVE',
+        desc: '복잡한 전화 없이 클릭 몇 번으로\n원하는 정비소에 간편하게 예약하세요',
+        imgUrl: quickImg,
     }
 ];
 
 const LandingPage = () => {
     const [activeTab, setActiveTab] = useState(0);
-    const [reviews, setReviews] = useState([]); // 서버 데이터를 저장할 상태
+    const [reviews, setReviews] = useState([]);
+    const [searchTerm, setSearchTerm] = useState(''); // 검색어 상태 추가
     const navigate = useNavigate();
 
     // 서버로부터 최신 후기 목록을 가져오는 로직
@@ -50,6 +51,17 @@ const LandingPage = () => {
         };
         fetchReviews();
     }, []);
+
+    // --- 실시간 자동 검색 필터링 로직 ---
+    // carModel(차종)과 repairPart(수리부위)를 합쳐 검색어가 포함된 항목을 찾습니다.
+    const filteredReviews = useMemo(() => {
+        return reviews.filter((review) => {
+            const carModel = review.carModel || "";
+            const repairPart = review.repairPart || "";
+            const searchTarget = (carModel + repairPart).toLowerCase();
+            return searchTarget.includes(searchTerm.toLowerCase());
+        });
+    }, [reviews, searchTerm]);
 
     // 카드 클릭 시 서비스 메뉴로 이동하며 해당 정비소 정보 전달
     const handleCardClick = (shopName) => {
@@ -93,60 +105,7 @@ const LandingPage = () => {
                 ></div>
             </section>
 
-            {/* --- Section 2: Review (요청사항 반영 수정) --- */}
-            <section className="section review-section">
-                <div className="review-header">
-                    <div>
-                        <h2>Our Customers' Voice</h2>
-                        <p>별점과 키워드로 증명된 정직한 정비 후기입니다.</p>
-                    </div>
-                    <div className="search-bar">
-                        <img src={searchIcon} alt="search icon" className="search-icon-img" />
-                        <input type="text" placeholder="차종이나 수리 키워드를 검색해 보세요" />
-                    </div>
-                </div>
-
-                <div className="review-cards">
-                    {reviews.map((review) => (
-                        <div
-                            className="card"
-                            key={review.id}
-                            onClick={() => handleCardClick(review.shopName)} // 카드 클릭 시 이동 로직
-                            style={{ cursor: 'pointer' }}
-                        >
-                            <div className="card-img-placeholder">
-                                {/* 업로드한 1번째 이미지 반영 (WebConfig 매핑 활용) */}
-                                {review.image1 ? (
-                                    <img src={review.image1} alt="정비 사진" className="review-card-img" />
-                                ) : (
-                                    <div className="no-image-text">정비 사진 없음</div>
-                                )}
-                            </div>
-                            <div className="card-content">
-                                {renderStars(review.rating)}
-
-                                <div className="card-info-header">
-                                    <h3>{review.carModel}</h3>
-                                    <span className="date">{review.createdAt || review.date}</span>
-                                </div>
-
-                                <div className="review-tags">
-                                    {(review.selectedTags || []).map((tag, index) => (
-                                        <span key={index} className="tag">#{tag}</span>
-                                    ))}
-                                </div>
-
-                                {/* 자동차 정비 상호명 내용 추가 */}
-                                <p className="review-info-text">
-                                    수리부위 : {review.repairPart} | <strong>{review.shopName}</strong>
-                                </p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* --- Section 3~5: Tab Menu (기존 유지) --- */}
+            {/*  How It Works (Tab Menu */}
             <section className="section how-it-works-section">
                 <div className="how-left">
                     <h2 className="how-title">HOW IT<br/>WORKS:</h2>
@@ -191,6 +150,70 @@ const LandingPage = () => {
                             className="tab-image"
                         />
                     </div>
+                </div>
+            </section>
+
+            {/* Review (검색 기능 포함) */}
+            <section className="section review-section">
+                <div className="review-header">
+                    <div>
+                        <h2>Our Customers' Voice</h2>
+                        <p>별점과 키워드로 증명된 정직한 정비 후기입니다.</p>
+                    </div>
+                    <div className="search-bar">
+                        <img src={searchIcon} alt="search icon" className="search-icon-img" />
+                        <input
+                            type="text"
+                            placeholder="차종이나 수리 키워드를 검색해 보세요"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)} // 자동 검색 입력 바인딩
+                        />
+                    </div>
+                </div>
+
+                <div className="review-cards">
+                    {filteredReviews.length > 0 ? (
+                        filteredReviews.map((review) => (
+                            <div
+                                className="card"
+                                key={review.id}
+                                onClick={() => handleCardClick(review.shopName)} // 카드 클릭 시 이동 로직
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <div className="card-img-placeholder">
+                                    {/* 업로드한 1번째 이미지 반영 (WebConfig 매핑 활용) */}
+                                    {review.image1 ? (
+                                        <img src={review.image1} alt="정비 사진" className="review-card-img" />
+                                    ) : (
+                                        <div className="no-image-text">정비 사진 없음</div>
+                                    )}
+                                </div>
+                                <div className="card-content">
+                                    {renderStars(review.rating)}
+
+                                    <div className="card-info-header">
+                                        <h3>{review.carModel}</h3>
+                                        <span className="date">{review.createdAt || review.date}</span>
+                                    </div>
+
+                                    <div className="review-tags">
+                                        {(review.selectedTags || []).map((tag, index) => (
+                                            <span key={index} className="tag">#{tag}</span>
+                                        ))}
+                                    </div>
+
+                                    {/* 자동차 정비 상호명 내용 추가 */}
+                                    <p className="review-info-text">
+                                        {review.repairPart} | <strong>{review.shopName}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="no-results" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '50px', color: '#999' }}>
+                            검색 조건에 맞는 후기가 없습니다.
+                        </div>
+                    )}
                 </div>
             </section>
 
