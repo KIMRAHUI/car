@@ -87,7 +87,7 @@ const MyPage = () => {
     const [leftTab, setLeftTab] = useState('account');
 
     // 우측 탭 상태
-    const [rightTab, setRightTab] = useState('reservation');
+    const [rightTab, setRightTab] = useState('status');
 
     // 모달 렌더링 상태 관리 (null, 'withdraw', 'editChoice', 'vehicleEdit', 'personalEdit', 'review', 'resEdit')
     const [activeModal, setActiveModal] = useState(null);
@@ -413,8 +413,6 @@ const MyPage = () => {
 
 
 
-
-
     // 비로그인 상태 화면
     if (!isLoggedIn) {
         return (
@@ -569,7 +567,7 @@ const MyPage = () => {
                                     {maintenanceData.length > 0 ? (
                                         <div className="slider-item-card" style={{ border: '1px solid #eee', padding: '20px', borderRadius: '12px', background: '#fff' }}>
                                             {/* 상단 항목 정보 패널 */}
-                                            <div className="item-status-summary" style={{ marginBottom: '20px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', borderLeft: '4px solid #000' }}>
+                                            <div className="item-status-summary" style={{ marginBottom: '20px', padding: '15px', background: '#f9f9f9', borderRadius: '8px' }}>
                     <span className="category-badge" style={{ background: '#e0e0e0', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem' }}>
                         {maintenanceData[currentItemIndex].category}
                     </span>
@@ -592,7 +590,7 @@ const MyPage = () => {
                                                     border: '1px dashed #ccc'
                                                 }}>
                                                     <p style={{ fontSize: '0.9rem', color: '#555', lineHeight: '1.5', margin: 0 }}>
-                                                        ✅ 현재 이 항목은 <strong>정상 상태</strong>입니다.<br/>
+                                                        현재 이 항목은 <strong>정상 상태</strong>입니다.<br/>
                                                         추가 정비 기록은 상태가 '주의'로 변경된 후에<br/>
                                                         입력하실 수 있습니다.
                                                     </p>
@@ -624,71 +622,98 @@ const MyPage = () => {
 
                             {/* 다음 교체 (그래프 논리 및 UX 개선) */}
                             {leftTab === 'replace' && (
-                                <div className="replace-info">
-                                    <h3>필수 소모품 (Essential)</h3>
+                                <div className="replace-info-slider">
+                                    <div className="slider-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                        <h3 style={{ margin: 0 }}>다음 교체 (Essential)</h3>
+                                        <span className="item-counter" style={{ fontSize: '0.85rem', color: '#888', fontWeight: 'bold' }}>
+                {currentItemIndex + 1} / {maintenanceData.length}
+            </span>
+                                    </div>
 
-                                    {maintenanceData.length === 0 ? (
-                                        <p className="no-data">교체 데이터가 없습니다.</p>
-                                    ) : (
-                                        maintenanceData.map((item, index) => {
-                                            const isNoData = item.lastServiceDate === "기록 없음";
-                                            const isBrandNew = !isNoData && item.maintenanceProgress === 0;
+                                    {maintenanceData.length > 0 ? (
+                                        <div className="slider-item-card" style={{ border: '1px solid #eee', padding: '20px', borderRadius: '12px', background: '#fff' }}>
+                                            {/* 현재 인덱스의 아이템 데이터 추출 */}
+                                            {(() => {
+                                                const item = maintenanceData[currentItemIndex];
+                                                const isNoData = item.lastServiceDate === "기록 없음";
+                                                const isBrandNew = !isNoData && item.maintenanceProgress === 0;
 
-                                            return (
-                                                <div key={index} className="replace-item-card" style={{
-                                                    marginBottom: '25px',
-                                                    opacity: isNoData ? 0.6 : 1 // 데이터 없으면 약간 흐리게
-                                                }}>
-                                                    <div className="replace-item-info" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span className="item-name" style={{ fontWeight: 'bold' }}>
-                                {item.itemName} {isBrandNew && "✨"}
-                            </span>
-                                                        <span className="item-percent" style={{
-                                                            fontSize: '0.85rem',
-                                                            fontWeight: 'bold',
-                                                            color: isNoData ? '#ccc' : (isBrandNew ? '#2ecc71' : '#333')
+                                                return (
+                                                    <>
+                                                        <div className="replace-item-info" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                <span className="item-name" style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                    {item.itemName} {isBrandNew && "✨"}
+                                </span>
+                                                            <span className="item-percent" style={{
+                                                                fontSize: '1rem',
+                                                                fontWeight: 'bold',
+                                                                color: isNoData ? '#ccc' : (isBrandNew ? '#2ecc71' : '#333')
+                                                            }}>
+                                    {isNoData ? "미등록" : `${item.maintenanceProgress}%`}
+                                </span>
+                                                        </div>
+
+                                                        {/* 프로그레스 바 */}
+                                                        <div className="progress-container" style={{
+                                                            width: '100%',
+                                                            height: '14px',
+                                                            backgroundColor: '#f0f0f0',
+                                                            borderRadius: '7px',
+                                                            overflow: 'hidden',
+                                                            marginBottom: '15px',
+                                                            border: isNoData ? '1px dashed #ccc' : 'none'
                                                         }}>
-                                {isNoData ? "미등록" : `${item.maintenanceProgress}%`}
-                            </span>
-                                                    </div>
+                                                            <div className="progress-fill" style={{
+                                                                width: isNoData ? '0%' : (isBrandNew ? '5%' : `${item.maintenanceProgress}%`),
+                                                                height: '100%',
+                                                                backgroundColor: isNoData ? 'transparent' : (isBrandNew ? '#2ecc71' : (item.status === '정상' ? '#2ecc71' : (item.status === '주의' ? '#f1c40f' : '#e74c3c'))),
+                                                                transition: 'width 0.5s ease-in-out'
+                                                            }}></div>
+                                                        </div>
 
-                                                    {/* 프로그레스 바: 데이터 없음(점선 회색) vs 신규교체(초록색 5%) vs 진행중(진행색) */}
-                                                    <div className="progress-container" style={{
-                                                        width: '100%',
-                                                        height: '12px',
-                                                        backgroundColor: '#f0f0f0',
-                                                        borderRadius: '6px',
-                                                        overflow: 'hidden',
-                                                        marginBottom: '6px',
-                                                        border: isNoData ? '1px dashed #ccc' : 'none'
-                                                    }}>
-                                                        <div className="progress-fill" style={{
-                                                            // 0%일 때 아주 살짝이라도 색을 보여줘서 활성화 상태임을 표시 (5%)
-                                                            width: isNoData ? '0%' : (isBrandNew ? '5%' : `${item.maintenanceProgress}%`),
-                                                            height: '100%',
-                                                            backgroundColor: isNoData ? 'transparent' : (isBrandNew ? '#2ecc71' : (item.status === '정상' ? '#2ecc71' : (item.status === '주의' ? '#f1c40f' : '#e74c3c'))),
-                                                            transition: 'width 0.5s ease-in-out'
-                                                        }}></div>
-                                                    </div>
+                                                        {/* 상세 수치 정보 섹션 */}
+                                                        <div className="replace-detail-box" style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', fontSize: '0.85rem' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                                <span style={{ color: '#888' }}>최근 정비</span>
+                                                                <span style={{ fontWeight: 'bold' }}>
+                                        {isNoData ? "이력 없음" : `${item.lastServiceMileage?.toLocaleString()} km`}
+                                    </span>
+                                                            </div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                                <span style={{ color: '#888' }}>교체 주기</span>
+                                                                <span>{item.replaceInterval?.toLocaleString()} km</span>
+                                                            </div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: '8px', marginTop: '8px' }}>
+                                                                <span style={{ color: '#888' }}>남은 거리</span>
+                                                                <span style={{ color: isBrandNew ? '#2ecc71' : '#e74c3c', fontWeight: 'bold' }}>
+                                        {isNoData ? "-" : `${item.remainingMileage?.toLocaleString()} km`}
+                                    </span>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
 
-                                                    <div className="replace-item-footer" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#888' }}>
-                                                        {/* 최근 정비 정보 */}
-                                                        <span>
-                                {isNoData
-                                    ? "위 탭에서 정비 이력을 등록해주세요"
-                                    : `최근: ${item.lastServiceMileage?.toLocaleString()} km`}
-                            </span>
-
-                                                        {/* 기준 주기 또는 남은 거리 정보 */}
-                                                        <span style={{ color: isBrandNew ? '#2ecc71' : '#888', fontWeight: isBrandNew ? 'bold' : 'normal' }}>
-                                {isNoData
-                                    ? `기준: ${item.replaceInterval?.toLocaleString()}km`
-                                    : (isBrandNew ? "최상의 상태입니다!" : `남은 거리: ${item.remainingMileage?.toLocaleString()} km`)}
-                            </span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
+                                            {/* 슬라이드 컨트롤러 */}
+                                            <div className="slider-controls" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '10px' }}>
+                                                <button
+                                                    disabled={currentItemIndex === 0}
+                                                    onClick={() => setCurrentItemIndex(prev => prev - 1)}
+                                                    style={{ flex: 1, padding: '10px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: currentItemIndex === 0 ? 0.3 : 1 }}
+                                                >
+                                                    이전
+                                                </button>
+                                                <button
+                                                    disabled={currentItemIndex === maintenanceData.length - 1}
+                                                    onClick={() => setCurrentItemIndex(prev => prev + 1)}
+                                                    style={{ flex: 1, padding: '10px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: currentItemIndex === maintenanceData.length - 1 ? 0.3 : 1 }}
+                                                >
+                                                    다음
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="no-data">교체 데이터가 없습니다.</p>
                                     )}
                                 </div>
                             )}
@@ -703,6 +728,7 @@ const MyPage = () => {
                     <div className="tabs right-tabs">
                         {/* 탭 버튼 3개로 확장 */}
                         <button
+                            // 초기값이 'status'이므로 처음 진입 시 이 버튼에 'active' 클래스가 붙음
                             className={`tab-btn right-tab-btn ${rightTab === 'status' ? 'active' : ''}`}
                             onClick={() => setRightTab('status')}
                         >
@@ -723,7 +749,6 @@ const MyPage = () => {
                     </div>
 
                     <div className="right-content">
-                        {/* 1. 예약 현황 탭 (statusReservations 사용) */}
                         {/* 1. 예약 현황 탭 */}
                         {rightTab === 'status' && (
                             <div className="reservation-section">
