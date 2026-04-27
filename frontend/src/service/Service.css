@@ -588,7 +588,7 @@
 
 @media screen and (max-width: 480px) {
     .addr-modal-content {
-        width: 95% !important;   /
+        width: 95% !important;
         height: 85vh !important;
     }
 }
