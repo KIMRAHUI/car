@@ -106,6 +106,28 @@
                  LEFT JOIN `car`.`car_models` cm     ON u.`car_model_id` = cm.`model_id`
         ORDER BY r.`created_at` DESC
     </select>
+    <select id="selectReviewsByPartnerId" resultType="com.krh.backend.entities.review.Review">
+        SELECT
+            r.`id`,
+            r.`reservation_id` AS `reservationId`,
+            r.`user_email`     AS `userEmail`,
+            r.`rating`,
+            r.`mileage`,
+            r.`image_1`        AS `image1`,
+            r.`image_2`        AS `image2`,
+            r.`created_at`     AS `createdAt`,
+            u.`name`           AS `userName`,     /* 작성자 이름 */
+            cm.`model_name`    AS `carModel`,    /* 작성자 차량 모델 */
+            (SELECT GROUP_CONCAT(ri.`item_name` SEPARATOR ', ')
+             FROM `car`.`reservation_items` ri
+             WHERE ri.`reservation_id` = r.`reservation_id`) AS `repairPart` /* 수리 내역 */
+        FROM `car`.`reviews` r
+                 INNER JOIN `car`.`reservations` res ON r.`reservation_id` = res.`id`
+                 LEFT JOIN `car`.`users` u           ON r.`user_email` = u.`email`
+                 LEFT JOIN `car`.`car_models` cm     ON u.`car_model_id` = cm.`model_id`
+        WHERE res.`partner_id` = #{partnerId}
+        ORDER BY r.`created_at` DESC
+    </select>
     <update id="updateReview" parameterType="com.krh.backend.entities.review.Review">
         UPDATE `car`.`reviews`
         SET `rating`  = #{rating},

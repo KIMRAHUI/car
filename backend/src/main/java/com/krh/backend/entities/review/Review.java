@@ -31,4 +31,5 @@ public class Review {
     private String shopName;   // 정비소 이름
     private String repairPart; // 수리 부위
 
+    private List<String> tags;
 }

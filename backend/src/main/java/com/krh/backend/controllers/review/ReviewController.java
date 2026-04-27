@@ -16,6 +16,16 @@ import java.util.List;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    /**
+     * [GET] 특정 정비소(Partner)의 후기 목록 조회
+     * 프론트엔드 ReservationModal에서 업체별 리뷰를 로드할 때 호출합니다.
+     * 경로: GET /api/review/partner/{partnerId}
+     */
+    @GetMapping("/partner/{partnerId}")
+    public List<Review> getPartnerReviews(@PathVariable String partnerId) {
+        // 서비스 레이어에서 매퍼를 호출해 조인된 결과를 가져옵니다.
+        return this.reviewService.getReviewsByPartner(partnerId);
+    }
 
     /**
      * [GET] 후기 상세 조회 (수정 모드 시 데이터 로딩용)
@@ -60,4 +70,5 @@ public class ReviewController {
         Result result = this.reviewService.deleteReview(reviewId);
         return result.name().toLowerCase();
     }
+
 }

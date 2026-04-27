@@ -41,4 +41,7 @@ public interface ReviewMapper {
     int deleteReviewTagsByReviewId(@Param("reviewId") Long reviewId);
 
     List<Review> selectAllReviews();
+
+    // [READ] 특정 정비소(Partner)의 모든 후기 목록 조회 (추가)
+    List<Review> selectReviewsByPartnerId(@Param("partnerId") String partnerId);
 }

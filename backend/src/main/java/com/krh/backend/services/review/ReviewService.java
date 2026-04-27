@@ -41,6 +41,9 @@ public class ReviewService {
         return reviews;
     }
 
+
+
+
     /**
      * [READ] 후기 상세 정보 조회 (수정 모드 진입 시 데이터 채우기용)
      */
@@ -176,4 +179,21 @@ public class ReviewService {
             }
         }
     }
+
+    public List<Review> getReviewsByPartner(String partnerId) {
+        // 1. 매퍼를 통해 해당 업체 ID를 가진 예약들의 리뷰 리스트를 가져옴
+        List<Review> reviews = this.reviewMapper.selectReviewsByPartnerId(partnerId);
+
+        // 2. 각 리뷰에 대한 태그 정보를 채워줌
+        if (reviews != null && !reviews.isEmpty()) {
+            for (Review review : reviews) {
+                // review.setTags 대신 다른 메서드들과 동일하게 setSelectedTags를 사용하세요.
+                // 그래야 프론트엔드에서 selectedTags라는 하나의 이름으로 데이터를 일관되게 받을 수 있습니다.
+                review.setSelectedTags(this.reviewMapper.selectTagsByReviewId(review.getId()));
+            }
+        }
+
+        return reviews;
+    }
+
 }

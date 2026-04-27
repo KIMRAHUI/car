@@ -162,11 +162,13 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
 
     const [currentUser, setCurrentUser] = useState(null);
     const [uploadImages, setUploadImages] = useState([]);
+    const [reviews, setReviews] = useState([]);
+    const [isLoadingReviews, setIsLoadingReviews] = useState(true);
 
     useEffect(() => {
         const fetchCurrentSession = async () => {
             try {
-                const res = await axios.get('/mypage/info');
+                const res = await axios.get('/api/mypage/info');
                 if (res.data.result === 'success') {
                     setCurrentUser(res.data.user);
                 }
@@ -174,8 +176,31 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                 console.error("Session check failed", e);
             }
         };
+        const fetchReviews = async () => {
+            if (!partner?.id) return;
+            try {
+                setIsLoadingReviews(true);
+                // 백엔드 ReviewController의 @GetMapping("/partner/{partnerId}") 호출
+                const res = await axios.get(`/api/review/partner/${partner.id}`);
+                // 컨트롤러가 List<Review>를 직접 리턴하므로 res.data가 곧 배열입니다.
+                if (Array.isArray(res.data)) {
+                    setReviews(res.data);
+                } else if (res.data.reviews) {
+                    // 만약 CommonResult 등으로 감싸서 보냈을 경우를 대비
+                    setReviews(res.data.reviews);
+                }
+            } catch (e) {
+                console.error("Failed to fetch reviews", e);
+                setReviews([]);
+            } finally {
+                setIsLoadingReviews(false);
+            }
+        };
+
         fetchCurrentSession();
-    }, []);
+        fetchReviews();
+    }, [partner.id]);
+
 
     const showAlert = (title, message, onConfirm = null) => {
         setAlertConfig({ show: true, title, message, onConfirm });
@@ -189,16 +214,24 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
         return `${year}-${month}-${day}`;
     };
 
-    const reviews = [
-        { id: 1, user: "카밋매니아", rating: 5, content: "도색 퀄리티가 미쳤습니다. 수입차 전문이라 그런지 이질감이 전혀 없네요!", date: "2026.03.15" },
-        { id: 2, user: "안전운전해용", rating: 4, content: "상담도 친절하시고 예약 시간 딱 맞춰서 작업해주셔서 좋았습니다.", date: "2026.03.10" }
-    ];
 
     const calculateTotalRating = () => {
+        // 1. 업체 고유 ID 기반 알고리즘 점수 생성 (30% 비중)
+        // 데이터가 아예 없을 때만 100% 노출되고, 리뷰가 생기면 보조 수단으로 전환됩니다.
         const idBase = parseInt(partner.id?.slice(-3) || '123') % 9;
         const externalRating = 4.0 + (idBase * 0.1);
-        const internalRating = reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviews.length;
-        const total = (externalRating * 0.7) + (internalRating * 0.3);
+
+        // 2. 우리 플랫폼 실제 사용자 리뷰 평균 계산 (70% 비중)
+        const internalRating = reviews.length > 0
+            ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviews.length
+            : 0;
+
+        // 3. 최종 신뢰 지수 산출
+        // 실제 리뷰가 하나라도 있다면 사용자 점수 7, 알고리즘 점수 3의 비율로 섞습니다.
+        const total = reviews.length > 0
+            ? (internalRating * 0.7) + (externalRating * 0.3)
+            : externalRating;
+
         return total.toFixed(1);
     };
 
@@ -377,30 +410,37 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                     </header>
 
                     <div className="res-body">
+                        {/* STEP 1: 업체 정보 및 후기 조회 */}
                         {step === 1 && (
                             <div className="step-container step-1">
+                                {/* 1. 업체 요약 정보 영역 (상단 고정) */}
                                 <div className="partner-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                     <h3 style={{ margin: 0 }}>{partner.place_name}</h3>
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                            <span className="rating-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1A1A1A' }}>
-                                                ★ {finalRating}
-                                            </span>
-                                            <span style={{ cursor: 'help', fontSize: '0.8rem', color: '#ccc' }} title="전용 평점입니다.">ⓘ</span>
+                                <span className="rating-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1A1A1A' }}>
+                                    ★ {finalRating}
+                                </span>
+                                            <span style={{ cursor: 'help', fontSize: '0.8rem', color: '#ccc' }} title="카밋 자체 데이터 기반 신뢰 점수입니다.">ⓘ</span>
                                         </div>
                                         <div style={{ fontSize: '0.65rem', color: '#888', fontWeight: '500' }}>Carmmit 통합 신뢰 지수</div>
                                     </div>
                                 </div>
 
+                                {/* 2. 업체 배너 및 주소 */}
                                 <div style={{ width: '100%', height: '180px', backgroundColor: '#f2f2f2', borderRadius: '8px', overflow: 'hidden', margin: '10px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <img src={theme.banner} alt="banner" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '10px' }} />
                                 </div>
                                 <div className="location-text" style={{fontSize: '0.8rem', color: '#666', marginBottom: '10px'}}>{partner.address_name}</div>
+
+                                {/* 3. 탭 메뉴 (소개 vs 후기) */}
                                 <div className="tab-menu">
                                     <button className={tab === 'intro' ? 'active' : ''} onClick={() => setTab('intro')}>업체소개</button>
                                     <button className={tab === 'review' ? 'active' : ''} onClick={() => setTab('review')}>후기({reviews.length})</button>
                                 </div>
-                                <div className="tab-content">
+
+                                {/* 4. 탭별 상세 내용 영역 */}
+                                <div className="tab-content" style={{ minHeight: '200px' }}>
                                     {tab === 'intro' ? (
                                         <div className="intro-content">
                                             <p>{dynamicContent.slogan}</p>
@@ -412,20 +452,50 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                                             </ul>
                                         </div>
                                     ) : (
-                                        <div className="review-list">
-                                            {reviews.map(r => (
-                                                <div key={r.id} className="review-item" style={{borderBottom:'1px solid #eee', padding:'10px 0'}}>
-                                                    <div className="review-top"><strong>{r.user}</strong> <span style={{color:'#f39c12'}}>⭐{r.rating}</span></div>
-                                                    <p style={{fontSize:'0.8rem', margin:'5px 0'}}>{r.content}</p>
+                                        <div className="review-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                            {isLoadingReviews ? (
+                                                <div style={{ textAlign: 'center', padding: '40px 0', color: '#999', fontSize: '0.85rem' }}>후기를 불러오는 중입니다...</div>
+                                            ) : reviews.length > 0 ? (
+                                                reviews.map((r) => (
+                                                    <div key={r.id} className="review-item" style={{ borderBottom: '1px solid #eee', padding: '12px 0' }}>
+                                                        <div className="review-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <div>
+                                                                <strong style={{ fontSize: '0.9rem' }}>{r.userEmail ? r.userEmail.split('@')[0] : '익명'}님</strong>
+                                                                <span style={{ fontSize: '0.7rem', color: '#888', marginLeft: '8px' }}>
+                                                        {r.carModel || '차종 정보 없음'} | {r.repairPart || '일반 정비'}
+                                                    </span>
+                                                            </div>
+                                                            <span style={{ color: '#f39c12', fontWeight: 'bold' }}>⭐ {r.rating}</span>
+                                                        </div>
+                                                        <p style={{ fontSize: '0.8rem', margin: '8px 0', color: '#444', lineHeight: '1.4' }}>
+                                                            {r.content}
+                                                        </p>
+                                                        {/* 후기 이미지 출력 */}
+                                                        {(r.image1 || r.image2) && (
+                                                            <div style={{ display: 'flex', gap: '5px', marginBottom: '8px' }}>
+                                                                {r.image1 && <img src={r.image1} alt="review-1" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />}
+                                                                {r.image2 && <img src={r.image2} alt="review-2" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />}
+                                                            </div>
+                                                        )}
+                                                        <div style={{ fontSize: '0.65rem', color: '#bbb', textAlign: 'right' }}>
+                                                            {r.createdAt ? r.createdAt.split('T')[0] : ''}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div style={{ textAlign: 'center', padding: '40px 0', color: '#bbb', fontSize: '0.8rem' }}>
+                                                    아직 등록된 후기가 없습니다.<br />첫 후기를 작성해 보세요!
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
                                     )}
                                 </div>
+
                                 <button className="next-btn-black" onClick={() => setStep(2)}>정비 예약하기</button>
                             </div>
                         )}
 
+                        {/* STEP 2: 카테고리 선택 */}
                         {step === 2 && (
                             <div className="step-container step-2">
                                 <h3 style={{marginBottom:'40px'}}>카테고리를 선택해주세요</h3>
@@ -443,6 +513,7 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                             </div>
                         )}
 
+                        {/* STEP 3: 상세 항목 및 이미지 업로드 */}
                         {step === 3 && (
                             <div className="step-container step-3">
                                 {category === '일반' && (
@@ -499,14 +570,6 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                                             )}
                                             <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleImageChange} accept="image/*" multiple />
                                         </div>
-
-                                        {/*textarea<*/}
-                                        {/*    placeholder="사고 경위를 자유롭게 입력해주세요."*/}
-                                        {/*    className="desc-area"*/}
-                                        {/*    style={{width:'100%', height:'60px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}*/}
-                                        {/*    value={accidentDesc}*/}
-                                        {/*    onChange={(e) => setAccidentDesc(e.target.value)}*/}
-                                        {/*></textarea>*/}
                                         <button className="next-btn-gray" onClick={() => setStep(4)} style={{marginTop:'15px'}}>일시 선택하기</button>
                                     </div>
                                 )}
@@ -514,7 +577,6 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                                 {category === '고장' && (
                                     <div className="fix-input">
                                         <h3 style={{fontSize:'1rem'}}>고장 증상을 선택하고 사진을 등록해주세요</h3>
-
                                         <div className="keyword-grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'20px'}}>
                                             {['시동 불량/지연', '이상 소음 발생', '비정상적 진동', '계기판 경고등', '출력 저하/가속 안됨', '냉각수/오일 누유'].map(word => (
                                                 <button
@@ -540,19 +602,13 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                                             )}
                                             <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleImageChange} accept="image/*" multiple />
                                         </div>
-
-                                        {/*<textarea*/}
-                                        {/*    placeholder="상세 증상을 입력해주세요."*/}
-                                        {/*    value={repairDesc}*/}
-                                        {/*    onChange={(e) => setRepairDesc(e.target.value)}*/}
-                                        {/*    style={{width:'100%', height:'80px', padding:'10px', border: '1px solid #ddd', borderRadius: '4px'}}*/}
-                                        {/*></textarea>*/}
                                         <button className="next-btn-gray" onClick={() => setStep(4)} style={{marginTop:'20px'}}>일시 선택하기</button>
                                     </div>
                                 )}
                             </div>
                         )}
 
+                        {/* STEP 4: 예약 일시 선택 */}
                         {step === 4 && (
                             <div className="step-container step-4">
                                 <CustomCalendar
@@ -572,6 +628,7 @@ const ReservationModal = ({ partner, onClose, userEmail }) => {
                             </div>
                         )}
 
+                        {/* STEP 5: 예약 완료 결과 */}
                         {step === 5 && (
                             <div className="step-container step-5" style={{paddingTop:0}}>
                                 <img src={completeImage} alt="complete" style={{width:'100%', marginBottom:'20px'}} />
