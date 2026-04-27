@@ -4,6 +4,8 @@ import Header from '../components/header/Header.jsx';
 import './Service.css';
 import swapIcon from "../assets/image/service/Change.png";
 import ReservationModal from '../components/service/ReservationModal.jsx'; // 예약 모달 컴포넌트
+import AuthAlertModal from '../components/auth/AuthAlertModal.jsx';
+
 
 const Service = () => {
     const [map, setMap] = useState(null);
@@ -29,6 +31,23 @@ const Service = () => {
     const polylineRef = useRef(null);
     const markersRef = useRef([]);
     const partnerMarkersRef = useRef([]);
+
+    const [modalConfig, setModalConfig] = useState({
+        show: false,
+        title: '',
+        message: ''
+    });
+
+    // 초 단위를 시간/분 문자열로 변환해주는 도우미 함수
+    const formatTimeString = (seconds) => {
+        const totalMinutes = Math.round(seconds / 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return hours > 0 ? `${hours}시간 ${minutes}분` : `${minutes}분`;
+    };
+
+    const showAlert = (title, message) => setModalConfig({ show: true, title, message });
+    const closeModal = () => setModalConfig({ ...modalConfig, show: false });
 
     const REST_API_KEY = import.meta.env.VITE_KAKAO_REST_KEY;
 
@@ -91,7 +110,6 @@ const Service = () => {
         loadScripts();
     }, []);
 
-    // 커스텀 임베드 주소 검색 실행
     const openAddrSearch = (type) => {
         setActiveAddrType(type);
         setIsAddrModalOpen(true);
@@ -99,8 +117,29 @@ const Service = () => {
             if (addrWrapperRef.current) {
                 new window.daum.Postcode({
                     oncomplete: (data) => {
-                        if (type === 'start') setStart(data.address);
-                        else setEnd(data.address);
+                        if (type === 'start') {
+                            // 출발지는 주소 텍스트만 저장
+                            setStart(data.address);
+                        } else {
+                            /**
+                             * [수정 포인트]
+                             * 1. buildingName: '현대블루핸즈 송탄점' 같은 상호명을 가져옴
+                             * 2. 상호명이 없으면 기본 주소를 사용.
+                             */
+                            const displayName = data.buildingName ? data.buildingName : data.address;
+
+                            // 도착지 입력창 및 나중에 그릴 마커의 텍스트로 사용
+                            setEnd(displayName);
+
+                            // [추가] 주소 검색으로 선택한 경우에도 예약 모달이 정상 작동하도록 가짜 파트너 객체 생성
+                            setSelectedPartner({
+                                place_name: displayName,
+                                address_name: data.address,
+                                phone: "", // 주소 API에서는 전화번호를 제공하지 않으므로 빈값 처리
+                                x: "", // x, y 좌표는 나중에 handleSearch의 Geocoder를 통해 채워집니다.
+                                y: ""
+                            });
+                        }
                         setIsAddrModalOpen(false);
                     },
                     width: '100%',
@@ -174,14 +213,19 @@ const Service = () => {
             `;
 
             content.onclick = () => {
+                // 1. 도착 주소 자동 입력 및 지도 중심 이동 (기존 기능)
                 setEnd(place.address_name);
                 currentMap.panTo(position);
+
+                // 2.클릭 시 바로 예약 모달 띄우기
+                handleOpenReservation(place);
             };
 
             const customOverlay = new window.kakao.maps.CustomOverlay({
                 position: position,
                 content: content,
-                yAnchor: 1.2
+                yAnchor: 1.2,
+                zIndex: 3 // 마커가 경로선보다 위에 보이도록 설정
             });
 
             customOverlay.setMap(currentMap);
@@ -190,12 +234,31 @@ const Service = () => {
     };
 
     const handleSearch = async () => {
-        if (!map || !start || !end) return alert("주소를 입력해주세요.");
+        // 1. 입력 검증
+        if (!map || !start || !end) {
+            showAlert("입력 오류", "출발지와 도착지 주소를 모두 입력해주세요.");
+            return;
+        }
+
         const geocoder = new window.kakao.maps.services.Geocoder();
-        const getCoord = (addr) => new Promise((res) => geocoder.addressSearch(addr, (r) => res(r[0])));
+
+        // 주소 검색 결과가 있으면 주소를 사용하고, 없으면 입력창 텍스트(end)를 그대로 사용
+        const startAddr = start;
+        const endAddr = selectedPartner?.address_name || end;
+
+        const getCoord = (addr) => new Promise((res, rej) => {
+            geocoder.addressSearch(addr, (result, status) => {
+                if (status === window.kakao.maps.services.Status.OK) {
+                    res(result[0]);
+                } else {
+                    rej(new Error(`좌표를 찾을 수 없는 주소입니다.`));
+                }
+            });
+        });
+
         try {
-            const origin = await getCoord(start);
-            const destination = await getCoord(end);
+            const origin = await getCoord(startAddr);
+            const destination = await getCoord(endAddr);
 
             const url = `https://apis-navi.kakaomobility.com/v1/directions?origin=${origin.x},${origin.y}&destination=${destination.x},${destination.y}&priority=RECOMMEND`;
 
@@ -204,45 +267,80 @@ const Service = () => {
                     Authorization: `KakaoAK ${REST_API_KEY}`
                 }
             });
+
             const data = await response.json();
-            if (data.routes) drawRoute(data.routes[0]);
-        } catch (e) { alert("경로 탐색 오류"); }
+
+            if (data.routes && data.routes.length > 0) {
+                drawRoute(data.routes[0]);
+            } else {
+                showAlert("경로 없음", "해당 구간의 이동 경로를 찾을 수 없습니다.");
+            }
+        } catch (e) {
+            console.error(e);
+            showAlert("탐색패배", "주소가 정확하지 않거나\n경로를 계산할 수 없습니다.");
+        }
     };
 
     const drawRoute = (route) => {
         if (polylineRef.current) polylineRef.current.setMap(null);
         markersRef.current.forEach(m => m.setMap(null));
+
         const linePath = [];
         route.sections[0].roads.forEach(road => {
-            road.vertexes.forEach((v, i) => { if (i % 2 === 0) linePath.push(new window.kakao.maps.LatLng(road.vertexes[i+1], v)); });
+            road.vertexes.forEach((v, i) => {
+                if (i % 2 === 0) linePath.push(new window.kakao.maps.LatLng(road.vertexes[i+1], v));
+            });
         });
-        const polyline = new window.kakao.maps.Polyline({ path: linePath, strokeWeight: 7, strokeColor: '#258fff', strokeOpacity: 0.9 });
+
+        const polyline = new window.kakao.maps.Polyline({
+            path: linePath,
+            strokeWeight: 7,
+            strokeColor: '#258fff',
+            strokeOpacity: 0.9
+        });
         polyline.setMap(map);
         polylineRef.current = polyline;
 
-        const totalMinutes = Math.round(route.summary.duration / 60);
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
+        // --- 도착지 검정 상호명 마커 생성 로직 추가 ---
+        const destPos = linePath[linePath.length - 1];
+        const destContent = document.createElement('div');
+        destContent.className = 'custom-marker-label';
+        destContent.style.cursor = 'pointer'; // 클릭 가능하다는 표시
+        destContent.innerHTML = `
+        <span class="marker-name">${end}</span>
+        <div class="marker-arrow"></div>
+    `;
 
-        let timeString = "";
-        if (hours > 0) {
-            timeString += `${hours}시간`;
-            if (minutes > 0) timeString += ` ${minutes}분`;
-        } else {
-            timeString = `${minutes}분`;
-        }
+        // 마커 클릭 시 예약 모달 오픈 연동
+        destContent.onclick = () => {
+            // 주소 검색으로 찾은 경우 selectedPartner가 없을 수 있으므로
+            // 최소한의 정보를 담은 객체를 넘겨주거나 예외 처리를 합니다.
+            const partnerData = selectedPartner || { place_name: end, address_name: end };
+            handleOpenReservation(partnerData);
+        };
 
+        const destOverlay = new window.kakao.maps.CustomOverlay({
+            position: destPos,
+            content: destContent,
+            yAnchor: 1.3, // 핀보다 약간 위로 조정
+            zIndex: 10
+        });
+        destOverlay.setMap(map);
+
+        // --- 상태 업데이트 및 범위 조정 ---
         setRouteInfo({
             distance: (route.summary.distance / 1000).toFixed(1),
-            duration: timeString
+            duration: formatTimeString(route.summary.duration) // 시간 포맷팅 함수 분리 추천
         });
 
         const bounds = new window.kakao.maps.LatLngBounds();
         linePath.forEach(p => bounds.extend(p));
         map.setBounds(bounds);
+
+        // markersRef에 추가하여 나중에 지울 수 있게 관리
         markersRef.current = [
-            new window.kakao.maps.Marker({position: linePath[0], map: map}),
-            new window.kakao.maps.Marker({position: linePath[linePath.length-1], map: map})
+            new window.kakao.maps.Marker({ position: linePath[0], map: map }), // 출발지는 기본 핀
+            destOverlay // 도착지는 검정 상호명
         ];
     };
 
@@ -370,6 +468,15 @@ const Service = () => {
                 <ReservationModal
                     partner={selectedPartner}
                     onClose={() => setIsReservationModalOpen(false)}
+                />
+            )}
+
+            {/*커스텀 알림 모달 (AuthAlertModal) */}
+            {modalConfig.show && (
+                <AuthAlertModal
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    onClose={closeModal}
                 />
             )}
         </div>

@@ -562,3 +562,33 @@
         grid-template-columns: 1fr; /* 모바일에서는 1열 */
     }
 }
+/* --- 주소 검색 모달--- */
+@media screen and (max-width: 768px) {
+    /* 모달 컨텐츠 박스 사이즈 조정 */
+    .addr-modal-content {
+        width: 90% !important;
+        height: 80vh !important;
+        max-width: none;
+    }
+
+    /* 헤더 텍스트 및 버튼 크기 조정 */
+    .addr-modal-header h3 {
+        font-size: 0.85rem;
+    }
+
+    .close-x {
+        font-size: 1.1rem;
+    }
+
+    /* 임베드 영역 높이 자동 조절 */
+    .addr-embed-wrapper {
+        height: calc(100% - 3rem);
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .addr-modal-content {
+        width: 95% !important;   /
+        height: 85vh !important;
+    }
+}
