@@ -43,7 +43,8 @@
          ┌────────────────────┴────────────────────┐
          ▼                                         ▼
 [ Spring Boot Backend ]                    [ FastAPI AI Server ]
-         │                                   (VGG19 Inference)
+ (REST API & Core Logic)                     (VGG19 Inference)
+         │                                   
          ▼
     [ MariaDB ]
 
