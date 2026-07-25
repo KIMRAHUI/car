@@ -1,0 +1,639 @@
+.landing-container {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+
+.section {
+    min-height: 100vh;
+    display: flex;
+}
+
+
+.hero-section {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    align-items: center;
+    overflow: hidden;
+}
+
+.hero-bg-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+}
+
+.hero-text-wrapper {
+    position: relative;
+    width: 22.25%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 2rem;
+    padding-top: 2.5rem;
+    justify-content: flex-start;
+    z-index: 2;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(30, 30, 30, 0.3);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+    transition: width 0.4s ease-in-out, padding 0.4s ease-in-out;
+}
+
+.hero-text-wrapper::after {
+    content: '';
+    position: absolute;
+    width: 96vh;
+    height: 96vh;
+    left: 0;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    transition: all 0.4s ease-in-out;
+}
+
+.hero-text {
+    color: white;
+    font-size: 5.5rem;
+    letter-spacing: 0.05rem;
+    writing-mode: vertical-rl;
+    white-space: nowrap;
+    transform: rotate(180deg);
+    opacity: 0.9;
+    z-index: 3;
+    transition: font-size 0.4s ease-in-out;
+}
+
+/* --- Section 2: Reviews--- */
+.review-section {
+    background-color: #f5f5f5;
+    flex-direction: column;
+    padding: 7.5rem 5rem;
+    /* [보정] 검색 결과 유무에 따른 높이 변화 최소화 */
+    min-height: 80vh;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2.5rem;
+}
+
+.review-header h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0.625rem;
+}
+
+.review-header p {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0;
+}
+
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    min-width: 20rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+/*왼쪽에서 오른쪽으로 이동하는 포인트 선 */
+.search-bar::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #333;
+    transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/*서치바 영역에 마우스 호버 시 선 이동 */
+.search-bar:hover::after {
+    width: 100%;
+}
+
+/*인풋 박스에 클릭(포커스) 시 선 이동 유지 */
+.search-bar:focus-within::after {
+    width: 100%;
+}
+
+.search-icon-img {
+    width: 2rem;
+    height: 2rem;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+/* 포커스 시 아이콘 선명도 조절 */
+.search-bar:focus-within .search-icon-img {
+    opacity: 1;
+}
+
+.search-bar input {
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0.3125rem 0.625rem;
+    width: 100%;
+    font-size: 1rem;
+}
+
+/* 캐러셀 가로 트랙 한도 고정 및 제어 영역 제어용 아키텍처 */
+.review-slider-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.review-cards-container {
+    width: 100%;
+    overflow: hidden; /* 영역 밖으로 흘러나가는 5번째 이상의 카드들을 투명 차단 */
+    padding: 1rem 0;
+}
+
+.review-cards {
+    display: flex; /* 기존 grid 레이아웃을 flex 레이아웃으로 변경하여 수평 정렬 일치 */
+    gap: 1.5rem;
+    height: 28rem;
+    align-items: stretch; /* 자식 요소(카드)들이 부모 트랙의 최대 높이로 자동 동기화되도록 */
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    width: 100%;
+}
+
+
+.review-cards .card {
+    flex: 0 0 calc((100% - (1.5rem * 3)) / 4);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/*슬라이더 조작용 양방향 버튼 */
+.slider-arrow-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.slider-arrow-btn:hover {
+    background-color: #333333;
+    color: #ffffff;
+    border-color: #333333;
+}
+
+.slider-arrow-btn:disabled {
+    opacity: 0;
+    pointer-events: none; /* 슬라이드 한도 끝 도달 시 버튼 영역 투명 소멸 컴포넌트 격리 */
+}
+
+.slider-arrow-btn.prev {
+    left: -1.5rem;
+    padding-right: 3px;
+}
+
+.slider-arrow-btn.next {
+    right: -1.5rem;
+    padding-left: 3px;
+}
+
+.card {
+    background: white;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    box-shadow: 0 0.625rem 1.875rem rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+}
+
+.card-img-placeholder {
+    width: 100%;
+    height: 12.5rem;
+    background-color: #e9ecef;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.review-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.no-image-text {
+    color: #adb5bd;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.card-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/*결과 없음 문구 출력 시 레이아웃 붕괴 방지 */
+.no-results {
+    width: 100%;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #868e96;
+    font-size: 1.1rem;
+    flex-shrink: 0; /* flex 전환 내부 규격 유지용 고정 */
+}
+
+.star-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    margin-bottom: 1rem;
+}
+
+.star {
+    color: #e0e0e0;
+    font-size: 1.125rem;
+}
+
+.star.filled {
+    color: #FFC107;
+}
+
+.rating-text {
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.card-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.8rem;
+}
+
+.card-info-header h3 {
+    font-size: 1.1rem;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 70%;
+}
+
+.card-info-header .date {
+    color: #888;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.review-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 0.75rem 0;
+}
+
+.tag {
+    background-color: #f1f3f5;
+    color: #495057;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.review-info-text {
+    font-size: 0.85rem;
+    color: #868e96;
+    line-height: 1.5;
+    border-top: 1px solid #f1f3f5;
+    padding-top: 0.875rem;
+    margin-top: auto;
+}
+
+
+.how-it-works-section {
+    background-color: #8b8b8b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 6.25rem;
+    min-height: 100vh;
+}
+
+.how-left {
+    flex: 0.4;
+}
+
+.how-title {
+    font-size: 5rem;
+    color: #2a2a2a;
+    line-height: 1.1;
+    margin-bottom: 3.75rem;
+}
+
+.Landingtab-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1.875rem;
+}
+
+.tab-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.inactive-tab-title {
+    font-size: 1.8rem;
+    color: #2a2a2a;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+}
+
+
+.inactive-tab-title::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #2a2a2a;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.active-tab-content {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.vertical-line {
+    width: 0.1875rem;
+    background-color: #2a2a2a;
+    height: auto;
+}
+
+.tab-text-group h3 {
+    font-size: 2rem;
+    color: #2a2a2a;
+    margin-bottom: 0.625rem;
+}
+
+.tab-text-group p {
+    font-size: 1rem;
+    color: #444;
+    white-space: pre-line;
+    margin-bottom: 0.9375rem;
+}
+
+.explore-btn {
+    background: transparent;
+    border: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3125rem;
+    color: #2a2a2a !important;
+    text-decoration: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.how-right {
+    flex: 0.5;
+}
+
+.image-container {
+    width: 100%;
+    max-width: 38rem;
+    display: flex;
+    justify-content: center;
+}
+
+.tab-image {
+    width: 70%;
+    height: auto;
+    object-fit: contain;
+    transition: opacity 0.5s ease-in-out;
+}
+
+
+@media (max-width: 64rem) {
+    .hero-text-wrapper {
+        width: 30%;
+        padding-left: 1.5rem;
+        padding-top: 4rem;
+    }
+
+    .hero-text {
+        font-size: 4rem;
+    }
+
+    .hero-text-wrapper::after {
+        width: 80vh;
+        height: 80vh;
+        left: 0;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    /* ---리뷰 섹션--- */
+    .review-section {
+        padding: 5rem 3rem;
+        min-height: auto;
+    }
+
+    .review-header {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 1.5rem;
+    }
+
+    .review-header div:first-child {
+        width: 100%;
+    }
+
+    .search-bar {
+        width: 100%;
+        max-width: 25rem;
+        min-width: unset;
+        align-self: flex-end;
+    }
+
+    .search-bar input {
+        font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+    }
+
+    .search-bar input::placeholder {
+        font-size: clamp(0.85rem, 1.6vw, 1rem);
+    }
+
+    /* 태블릿/미디엄 스크린에서의 네이티브 제스처 가로 스크롤 허용 인터랙션 */
+    .review-cards-container {
+        overflow-x: auto;
+        scrollbar-width: none; /* 파이어폭스 시스템 스크롤바 가리기 */
+    }
+
+    .review-cards-container::-webkit-scrollbar {
+        display: none; /* 웹킷 브라우저 스크롤 하이드 */
+    }
+
+    .review-cards {
+        transform: none !important;
+    }
+
+    .review-cards .card {
+        flex: 0 0 calc((100% - 1.5rem) / 2); /* 태블릿 2열 고정 할당 분할 */
+    }
+
+    .slider-arrow-btn {
+        display: none !important; /* 터치 환경 화살표 미출력 처리 */
+    }
+
+
+    .how-it-works-section {
+        flex-direction: row; /* 가로 배치 강제 유지 */
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 3rem;
+        gap: 2rem;
+    }
+
+    .how-left {
+        flex: 0.5;
+    }
+
+    .how-right {
+        flex: 0.5;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .how-title {
+        font-size: 3.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .image-container {
+        max-width: 100%;
+    }
+
+    .tab-image {
+        width: 90%;
+    }
+}
+
+
+@media (max-width: 48rem) {
+    .hero-text-wrapper {
+        width: 36.5%;
+        padding-left: 1rem;
+        padding-top: 3.5rem;
+    }
+
+    .hero-text {
+        font-size: 4rem;
+        letter-spacing: 0.02rem;
+    }
+
+    .hero-text-wrapper::after {
+        display: block;
+        width: 100vh;
+        height: 100vh;
+        left: -5rem;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    /* --- 리뷰 섹션--- */
+    .review-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        text-align: center;
+    }
+
+    .review-header h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .review-header p {
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+
+    .search-bar {
+        width: 100%;
+        min-width: unset;
+        align-self: center;
+    }
+
+    .search-bar input::placeholder {
+        text-align: center;
+        font-size: clamp(0.8rem, 2.8vw, 0.95rem);
+    }
+
+    /* 모바일 환경 스와이프 인터페이스 최적화 카드가 끊겨 보이며 다음 카드를 유도하는 85vw 정렬 */
+    .review-cards .card {
+        flex: 0 0 85vw;
+    }
+
+    .how-it-works-section {
+        flex-direction: column;
+        padding: 5rem 2rem;
+        gap: 3rem;
+    }
+
+    .how-title {
+        font-size: 3.5rem;
+    }
+}

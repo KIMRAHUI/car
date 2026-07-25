@@ -1,0 +1,719 @@
+
+.mypage-wrapper {
+    background-color: #D6D6D6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+.auth-header-layer {
+    background-color: white;
+    width: 100%;
+    position: relative;
+    z-index: 1000;
+}
+
+/* --------------------------------------
+   비회원 상태 UI
+--------------------------------------- */
+.guest-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.guest-box {
+    background: white;
+    padding: 4rem 3rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1);
+    white-space: nowrap;
+}
+
+.guest-box h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #1A1A1A;
+    font-weight: 800;
+}
+
+.guest-box p {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 2.5rem;
+}
+
+.guest-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-login, .btn-signup {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-login {
+    background-color: #1A1A1A;
+    color: white;
+}
+
+.btn-signup {
+    background-color: #E8E8E8;
+    color: #333;
+}
+
+.btn-login:hover { background-color: #333; }
+.btn-signup:hover { background-color: #D0D0D0; }
+
+/* --------------------------------------
+   로그인 회원 상태 메인 레이아웃
+--------------------------------------- */
+.mypage-main {
+    display: flex;
+    padding: 3rem 4rem 4rem;
+    gap: 2rem;
+    max-width: 90rem;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 좌측 패널 (60%) */
+.left-panel {
+    flex: 1.6;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 우측 패널 (40%) */
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 1.5rem;
+}
+
+/* --------------------------------------
+   좌측 패널 상세 디자인
+--------------------------------------- */
+.car-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand-logo-img {
+    height: 5.5rem;
+    width: auto;
+    object-fit: contain;
+}
+
+.car-name {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #1A1A1A;
+    margin: 0;
+    letter-spacing: -0.05rem;
+}
+
+.car-image-container {
+    width: 100%;
+    height: 25rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    background-color: #000;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+}
+
+.car-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 탭 버튼 스타일 */
+.tabs {
+    display: flex;
+}
+
+.tab-btn {
+    padding: 0.75rem 2rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.25rem 0.25rem 0 0;
+    color: #666;
+    background-color: #CFCFCF;
+    transition: all 0.2s ease;
+}
+
+/* 좌측 탭 액티브 상태에 따른 색상 변화 */
+.tab-btn.active-account { background-color: #FFFFFF; color: #1A1A1A; }
+.tab-btn.active-check { background-color: #E8E8E8; color: #1A1A1A; }
+.tab-btn.active-replace { background-color: #C4C4C4; color: #1A1A1A; }
+
+.tab-content {
+    min-height: 12.5rem;
+    border-radius: 0 0.5rem 0.5rem 0.5rem;
+    padding: 2rem;
+}
+
+.left-content-account { background-color: #FFFFFF; }
+.left-content-check { background-color: #E8E8E8; }
+.left-content-replace { background-color: #C4C4C4; }
+
+/* ACCOUNT 정보 스타일 */
+.account-info .info-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.account-info h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #333;
+    margin: 0;
+}
+
+.info-actions button {
+    background: #E0E0E0;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0.125rem;
+}
+
+.account-info p, .check-info p, .replace-info p {
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.8;
+    margin: 0 0 0.5rem 0;
+}
+
+.check-info h3, .replace-info h3 {
+    font-size: 1.125rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    color: #1A1A1A;
+}
+
+/* --------------------------------------
+   우측 패널 디자인
+--------------------------------------- */
+.right-tab-btn { background-color: #CFCFCF; }
+.right-tab-btn.active { background-color: #FFFFFF; color: #1A1A1A; }
+
+.right-content {
+    background-color: #FFFFFF;
+    border-radius: 0 0.5rem 0.5rem 0.5rem;
+    padding: 2rem;
+    flex: 1;
+    box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.05);
+}
+
+/* 예약 내역 타이틀 행 공통 */
+.res-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* 상호명 공통 스타일 */
+.res-partner-name {
+    margin: 0;
+    color: #000;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* 배지 공통 스타일 */
+.res-status-badge {
+    background: #000;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: fit-content;
+    flex-shrink: 0;
+}
+
+.shop-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-left:-5rem;
+    margin-top:1.5rem;
+}
+
+.res-shop-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin: 0 0 0.25rem 0;
+    color: #1A1A1A;
+}
+.shop-phone {
+    font-size: 0.75rem;
+    color: #888;
+    margin: 0 0 1rem 0;
+}
+
+.repair-images {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.repair-images img {
+    width: 48%;
+    height: 6rem;
+    object-fit: cover;
+    border-radius: 0.25rem;
+}
+
+.repair-desc p {
+    font-size: 0.813rem;
+    color: #444;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.res-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.res-actions button {
+    background: #E0E0E0;
+    border: none;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.125rem;
+    cursor: pointer;
+}
+
+/*히스토리(History) */
+.history-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.history-card {
+    margin-bottom: 1rem;
+}
+
+.date-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #1A1A1A;
+    color: white;
+    padding: 0.6rem;
+    min-width: 4rem;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
+}
+
+.year-month {
+    font-size: 0.7rem;
+    font-weight: 300;
+    letter-spacing: 0.05rem;
+    opacity: 0.8;
+}
+
+.day-strong {
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.history-header {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.header-info-main {
+    flex: 1;
+}
+
+.tag-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.tag-type {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border: 0.063rem solid #CCC;
+    border-radius: 0.125rem;
+    color: #555;
+    font-weight: 700;
+}
+
+.btn-review {
+    background: none;
+    border: 0.063rem solid #CCC;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 0.125rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-review:hover {
+    background-color: #f5f5f5;
+    border-color: #999;
+}
+
+.repair-desc {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background-color: #F9F9F9;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #F0F0F0;
+}
+
+.desc-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.desc-item .label {
+    width: 6rem;
+    color: #888;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.desc-item .value {
+    color: #1A1A1A;
+    font-weight: 400;
+}
+
+.history-divider {
+    width: 100%;
+    height: 1px;
+    border-top: 0.08rem dashed #CCC;
+    opacity: 0.6;
+}
+
+.item-ellipsis {
+    display: block;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.85rem;
+    color: #555;
+    margin: 4px 0;
+}
+
+.day {
+    position: relative;
+    cursor: pointer;
+}
+
+.red-dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 5px;
+    height: 5px;
+    background-color: #ff4d4f;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.res-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(26, 26, 26, 0.95);
+    color: #FFFFFF;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+.day:hover .res-tooltip {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.tooltip-title {
+    font-weight: 800;
+    color: #ff4d4f;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 3px;
+    display: block;
+}
+
+.tooltip-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.tooltip-time {
+    color: #CCC;
+    font-weight: 600;
+}
+
+.tooltip-partner {
+    font-weight: 400;
+}
+
+.res-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(26, 26, 26, 0.95) transparent transparent transparent;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, 5px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+
+@media screen and (max-width: 1024px) {
+    .mypage-main {
+        padding: 3rem;
+        gap: 1.5rem;
+    }
+    .car-image-container {
+        height: 20rem;
+    }
+    .car-name {
+        font-size: 1.75rem;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .guest-container {
+        padding: 1rem;
+    }
+
+    .guest-box {
+        padding: 1.5rem 1rem;
+        white-space: nowrap;
+        width: 95%;
+        box-sizing: border-box;
+    }
+
+    .guest-box h2 {
+        font-size: 0.875rem;
+        line-height: 1.4;
+        word-break: keep-all;
+    }
+
+    .guest-box p {
+        font-size: 0.7rem;
+        line-height: 1.5;
+        margin-bottom: 2rem;
+        word-break: keep-all;
+    }
+
+    .guest-buttons {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+    .res-partner-name {
+        font-size: 0.8rem !important;
+        font-weight: 600;
+        line-height: 1.3;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        width: 100%;
+    }
+
+    .mypage-main {
+        flex-direction: column;
+        padding: 2rem;
+        gap: 1rem;
+    }
+
+    .left-panel, .right-panel {
+        width: 100%;
+        flex: none;
+    }
+
+    .left-panel { order: 1; }
+    .right-panel { order: 2; padding-top: 1rem; }
+
+    .car-image-container {
+        height: 18rem;
+    }
+
+    .account-info .info-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .car-user-title {
+        width: 100%;
+        font-size: 1.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .info-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        display: flex;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .history-header { gap: 0.75rem; }
+    .date-badge { min-width: 3.5rem; }
+}
+
+
+@media screen and (max-width: 375px) {
+
+
+    .btn-login, .btn-signup {
+        width: 100%;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.9rem !important;
+        box-sizing: border-box;
+    }
+
+    .mypage-main {
+        padding: 2rem;
+    }
+
+    .tab-content, .right-content {
+        padding: 1.25rem 1rem;
+    }
+
+
+    .res-title-row {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.35rem !important;
+        margin-bottom: 10px !important;
+        width: 100%;
+    }
+
+
+    .res-partner-name {
+        font-size: 0.85rem !important;
+        font-weight: 800;
+        line-height: 1.2;
+        width: 100%;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        margin: 0 !important;
+    }
+
+
+    .res-status-badge {
+        align-self: flex-end !important;
+        font-size: 0.6rem !important;
+        padding: 0.15rem 0.5rem !important;
+        height: 1.1rem !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 3px !important;
+        margin-bottom: 0 !important;
+        flex-shrink: 0;
+    }
+
+
+    .repair-desc {
+        padding: 0.8rem !important;
+        gap: 0.45rem !important;
+    }
+
+    .repair-desc p {
+        font-size: 0.75rem !important;
+        line-height: 1.4;
+    }
+
+    .car-user-title { font-size: 1rem; }
+    .car-name { font-size: 1.4rem; }
+    .brand-logo-img { height: 4rem; }
+
+    .account-info p, .check-info p, .replace-info p {
+        font-size: 0.8rem;
+    }
+
+    .info-actions button, .res-actions button {
+        padding: 0.45rem 0.6rem !important;
+        font-size: 0.75rem !important;
+        flex: 1;
+    }
+
+    .tab-btn {
+        padding: 0.65rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

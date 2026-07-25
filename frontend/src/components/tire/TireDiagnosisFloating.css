@@ -1,0 +1,299 @@
+
+.tire-wrapper {
+    position: fixed;
+    bottom: 15rem;
+    right: 2.5rem;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+/* 창이 열렸을 때 툴팁 숨김 */
+.tire-wrapper.is-open .tire-tooltip {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* 타이어 진단 전용 툴팁 */
+.tire-tooltip {
+    background-color: #4A90E2;
+    color: white;
+    padding: 0.7rem 1.1rem; /* 살짝 축소 */
+    border-radius: 2rem;
+    font-size: 0.85rem; /* 살짝 축소 */
+    font-weight: 500;
+    box-shadow: 0 0.25rem 0.9375rem rgba(0, 0, 0, 0.1);
+    position: relative;
+    white-space: nowrap;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(1.25rem);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.tire-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -0.4rem;
+    transform: translateY(-50%);
+    border-top: 0.5rem solid transparent;
+    border-bottom: 0.5rem solid transparent;
+    border-left: 0.5rem solid #4A90E2;
+}
+
+.tire-wrapper:hover .tire-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+/* 타이어 플로팅 버튼*/
+.floating-tire {
+    width: 4.5rem;
+    height: 4.5rem;
+    background-color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.15);
+    overflow: hidden; /* 이미지가 원 밖으로 나가지 않게 설정 */
+    border: 2px solid #f0f0f0;
+}
+
+.floating-tire img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: drop-shadow(0 0.1rem 0.3rem rgba(0,0,0,0.1));
+}
+
+.floating-tire:hover {
+    transform: scale(1.1);
+}
+
+
+.tire-window {
+    position: absolute;
+    bottom: 5rem;
+    right: 0;
+    width: 22rem;
+    height: 28rem;
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 0.625rem 1.875rem rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(1.25rem); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.tire-header {
+    background: #1e1e1e;
+    color: white;
+    padding: 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tire-header h3 { font-size: 1rem; margin: 0; letter-spacing: 1px; }
+.close-btn { background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+/* 대화창 바디 */
+.tire-body {
+    flex: 1;
+    padding: 1.2rem;
+    background: #f9f9f9;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 말풍선*/
+.msg-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    max-width: 85%;
+    word-break: keep-all;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.user-msg {
+    align-self: flex-end;
+    background-color: #4A90E2;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+
+.bot-msg {
+    align-self: flex-start;
+    background: white;
+    color: #333;
+    border: 1px solid #eee;
+    border-bottom-left-radius: 2px;
+}
+
+/* 업로드 이미지 전용 버블 스타일 */
+.user-msg.image-bubble {
+    padding: 5px;
+    background-color: #4A90E2;
+}
+
+.uploaded-preview {
+    max-width: 100%;
+    border-radius: 12px;
+    display: block;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* 하단 업로드 버튼 */
+.tire-footer {
+    padding: 1.2rem;
+    border-top: 1px solid #eee;
+    background: white;
+}
+
+.upload-main-btn {
+    width: 100%;
+    background: #1e1e1e;
+    color: white;
+    border: none;
+    padding: 0.9rem;
+    border-radius: 0.8rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.upload-main-btn:hover {
+    background: #333;
+    transform: translateY(-1px);
+}
+
+.upload-main-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+/*AI 진단 결과 내 서비스 링크 및 가이드라인*/
+
+/*가이드라인 */
+.service-guide-container {
+    padding-top: 10px;
+    text-align: left;
+    animation: fadeIn 0.5s ease;
+}
+
+/*"정비소를 찾아보시겠어요?" 안내 문구 */
+.guide-text {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+/*동그란 정비소 찾기 버튼 */
+.service-link-btn {
+    background-color: #ffd700;
+    color: #000;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.service-link-btn:hover {
+    background-color: #ffc400;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.service-link-btn:active {
+    transform: translateY(0);
+}
+
+
+.text-content-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.main-text {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+.bot-msg {
+    padding: 14px 18px !important;
+}
+
+@media (max-width: 48rem) {
+    .tire-wrapper {
+        bottom: 10rem;
+        right: 1.5rem;
+    }
+
+    .tire-tooltip {
+        display: block;
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(0);
+        font-size: 0.75rem;
+        padding: 0.5rem 0.8rem;
+        position: absolute;
+        right: 4.2rem;
+    }
+
+    .is-open .tire-tooltip {
+        display: none !important;
+    }
+
+    .floating-tire {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .tire-window {
+        width: 18rem;
+        height: 24rem;
+        bottom: 4.5rem;
+    }
+
+    .msg-bubble {
+        font-size: 0.85rem;
+        max-width: 90%;
+    }
+}
