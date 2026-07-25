@@ -2,7 +2,8 @@
 
 
 # 🚗 COMMIT CAR
-> **Spring Boot, React, FastAPI 및 VGG19 인공지능 모델**을 결합한엔드투엔드 차량 관리 및 실시간 정비 예약·결함 진단 시스템
+> **Spring Boot, React, FastAPI 및 VGG19 인공지능 모델**을
+> 결합한엔드투엔드 차량 관리 및 실시간 정비 예약·결함 진단 시스템
 
 ---
 
