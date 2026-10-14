@@ -139,8 +139,8 @@ public class ReservationService {
      * [DELETE] 예약 취소 -> 상태 변경(CANCELED)
      */
     @Transactional
-    public Result cancelReservation(Long id) {
-        if (id == null) return CommonResult.FAILURE;
+    public Result cancelReservation(Long id, String userEmail) {
+        if (id == null || !this.isOwner(id, userEmail)) return CommonResult.FAILURE;
 
         Reservation reservation = Reservation.builder()
                 .id(id)
@@ -156,8 +156,9 @@ public class ReservationService {
      * [UPDATE] 예약 정보 수정
      */
     @Transactional
-    public Result updateReservation(Reservation reservation) {
+    public Result updateReservation(Reservation reservation, String userEmail) {
         if (reservation == null || reservation.getId() == null) return CommonResult.FAILURE;
+        if (!this.isOwner(reservation.getId(), userEmail)) return CommonResult.FAILURE;
         return this.reservationMapper.updateReservation(reservation) > 0
                 ? CommonResult.SUCCESS
                 : CommonResult.FAILURE;
@@ -178,5 +179,14 @@ public class ReservationService {
         return this.reservationMapper.updateReservation(reservation) > 0
                 ? CommonResult.SUCCESS
                 : CommonResult.FAILURE;
+    }
+
+    /**
+     * 해당 예약이 로그인한 사용자의 것인지 확인
+     */
+    private boolean isOwner(Long reservationId, String userEmail) {
+        if (reservationId == null || userEmail == null || userEmail.isEmpty()) return false;
+        return this.reservationMapper.selectReservationsByUserEmail(userEmail).stream()
+                .anyMatch(r -> reservationId.equals(r.getId()));
     }
 }
